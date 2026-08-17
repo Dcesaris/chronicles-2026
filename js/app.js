@@ -144,8 +144,8 @@ const App = {
         <div class="form-group">
           <label>Modelo</label>
           <select id="settings-api-model" style="width:100%;padding:0.75rem;background:var(--bg-glass);border:1px solid var(--border-glass);border-radius:8px;color:var(--text-primary);font-size:0.85rem;">
-            <option value="omniroute/Zeus-copy">Zeus-copy (recomendado)</option>
-            <option value="omniroute/Zeus-2.0">Zeus-2.0</option>
+            <option value="Zeus Copy">Zeus Copy (recomendado)</option>
+            <option value="omniroute/Zeus-2.0">Zeus 2.0</option>
             <option value="gpt-4o-mini">GPT-4o Mini</option>
             <option value="gpt-4o">GPT-4o</option>
             <option value="custom">Outro (digite abaixo)</option>
@@ -170,8 +170,8 @@ const App = {
       try {
         const config = JSON.parse(saved);
         document.getElementById('settings-api-key').value = config.key || '';
-        document.getElementById('settings-api-url').value = config.baseUrl || 'https://api.omniroute.ai/v1';
-        document.getElementById('settings-api-model').value = config.model || 'omniroute/Zeus-copy';
+        document.getElementById('settings-api-url').value = config.baseUrl || 'http://localhost:20128/v1';
+        document.getElementById('settings-api-model').value = config.model || 'Zeus Copy';
         if (config.model === 'custom') {
           document.getElementById('custom-model-group').style.display = 'block';
           document.getElementById('settings-api-model-custom').value = config.customModel || '';
@@ -188,7 +188,7 @@ const App = {
   /** Salva configurações de API */
   saveSettings() {
     const key = document.getElementById('settings-api-key').value.trim();
-    const baseUrl = document.getElementById('settings-api-url').value.trim() || 'https://api.omniroute.ai/v1';
+    const baseUrl = document.getElementById('settings-api-url').value.trim() || 'http://localhost:20128/v1';
     const modelSelect = document.getElementById('settings-api-model').value;
     const model = modelSelect === 'custom'
       ? document.getElementById('settings-api-model-custom').value.trim()
