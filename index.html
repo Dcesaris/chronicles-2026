@@ -150,6 +150,9 @@
       <button class="btn" onclick="App.showSettings()">
         <i class="fa-solid fa-gear"></i> &nbsp;Configurações
       </button>
+      <button class="btn" onclick="App.showSaveSlots()">
+        <i class="fa-solid fa-floppy-disk"></i> &nbsp;Salvar/Carregar
+      </button>
     </div>
   </div>
 </div>
@@ -316,6 +319,22 @@
       <div class="stat-row">
         <div class="stat-label"><span>Reputação</span><span id="stat-rep-val">50/100</span></div>
         <div class="stat-bar"><div class="stat-bar-fill rep" id="stat-rep-bar" style="width:50%"></div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label"><span>Influence</span><span id="stat-influence-val">10</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill" id="stat-influence-bar" style="width:10%;background:#7c4dff"></div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label"><span>Morale</span><span id="stat-morale-val">50</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill" id="stat-morale-bar" style="width:50%;background:#ffb300"></div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label"><span>Resources</span><span id="stat-resources-val">500</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill" id="stat-resources-bar" style="width:50%;background:#00e676"></div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label"><span>Network</span><span id="stat-network-val">20</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill" id="stat-network-bar" style="width:20%;background:#0288D1"></div></div>
       </div>
       <div class="stat-row">
         <div class="stat-label"><span>Créditos R$</span><span id="stat-credits-val">500</span></div>
@@ -500,6 +519,19 @@
 </div>
 
 <!-- ============================================
+     MODAL: SALVAR/CARREGAR
+     ============================================ -->
+<div id="save-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(12px);z-index:1100;display:none;align-items:center;justify-content:center;padding:1rem;">
+  <div style="width:100%;max-width:400px;background:var(--bg-panel);border:1px solid var(--border-glass);border-radius:16px;padding:1.5rem;">
+    <h3 style="font-family:var(--font-title);margin-bottom:1rem;">💾 Salvar / Carregar</h3>
+    <div id="save-slots-list" style="margin-bottom:1rem;"></div>
+    <div style="display:flex;gap:0.5rem;">
+      <button class="btn-back" style="flex:1;min-height:44px;" onclick="document.getElementById('save-modal').style.display='none'">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
      MODAL: CONQUISTAS
      ============================================ -->
 <div id="achievements-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;">
@@ -511,6 +543,19 @@
       </button>
     </div>
     <div class="achievements-grid" id="achievements-grid"></div>
+  </div>
+</div>
+
+<!-- ============================================
+     MODAL: SALVAR/CARREGAR
+     ============================================ -->
+<div id="save-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(12px);z-index:1100;display:none;align-items:center;justify-content:center;padding:1rem;">
+  <div style="width:100%;max-width:400px;background:var(--bg-panel);border:1px solid var(--border-glass);border-radius:16px;padding:1.5rem;">
+    <h3 style="font-family:var(--font-title);margin-bottom:1rem;">💾 Salvar / Carregar</h3>
+    <div id="save-slots-list" style="margin-bottom:1rem;"></div>
+    <div style="display:flex;gap:0.5rem;">
+      <button class="btn-back" style="flex:1;min-height:44px;" onclick="document.getElementById('save-modal').style.display='none'">Fechar</button>
+    </div>
   </div>
 </div>
 

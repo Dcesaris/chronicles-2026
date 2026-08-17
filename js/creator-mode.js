@@ -59,6 +59,9 @@ const StoryCreator = {
         <button class="btn btn-accent" onclick="StoryCreator.exportScenario()">
           <i class="fa-solid fa-download"></i> Exportar JSON
         </button>
+        <button class="btn" onclick="StoryCreator.importFromFile()">
+          <i class="fa-solid fa-upload"></i> Importar Arquivo
+        </button>
       </div>
 
       <div id="creator-list" style="max-height:400px;overflow-y:auto;">
@@ -195,5 +198,33 @@ const StoryCreator = {
     } catch (e) {
       UI.notify('Erro ao importar: JSON inválido.', 'danger');
     }
+  },
+
+  /** Exporta cenário como JSON */
+  exportScenario() {
+    const data = JSON.stringify(this.editingScenario, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${this.editingScenario.id || 'cenario'}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    UI.notify('Cenário exportado com sucesso!', 'success');
+  },
+
+  /** Importa cenário via arquivo */
+  importFromFile() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => this.importScenario(ev.target.result);
+      reader.readAsText(file);
+    };
+    input.click();
   }
 };

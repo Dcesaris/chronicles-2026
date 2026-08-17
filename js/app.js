@@ -214,6 +214,62 @@ const App = {
     document.getElementById('settings-modal').remove();
   },
 
+  /** Abre modal de saves */
+  showSaveSlots() {
+    const modal = document.getElementById('save-modal');
+    const list = document.getElementById('save-slots-list');
+    modal.style.display = 'flex';
+
+    const slots = Storage.getSlots();
+    let html = '';
+
+    for (let i = 1; i <= 3; i++) {
+      const slot = slots[i-1];
+      const saved = Storage.loadSlot(i);
+      const hasSave = slot || saved;
+
+      html += `
+        <div style="padding:0.75rem;border:1px solid var(--border-glass);border-radius:8px;margin-bottom:0.5rem;display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-weight:600;">Slot ${i}</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);">
+              ${hasSave ? (slot?.name || 'Personagem') + ' · ' + (slot?.date || '') : 'Vazio'}
+            </div>
+          </div>
+          <div style="display:flex;gap:0.5rem;">
+            ${hasSave ? `<button class="btn-back" style="padding:0.5rem 0.75rem;font-size:0.8rem;min-height:36px;" onclick="App.loadSave(${i})">Carregar</button>` : ''}
+            <button class="btn-back" style="padding:0.5rem 0.75rem;font-size:0.8rem;min-height:36px;" onclick="App.clearSave(${i})">Limpar</button>
+          </div>
+        </div>
+      `;
+    }
+
+    list.innerHTML = html || '<p style="color:var(--text-muted);text-align:center;">Nenhum save encontrado.</p>';
+  },
+
+  /** Carrega save de um slot */
+  loadSave(slotIndex) {
+    const saved = Storage.loadSlot(slotIndex);
+    if (saved) {
+      Engine.state = saved;
+      NPCSystem.init(NPC_DATA);
+      MapSystem.init();
+      MapSystem.revealedAreas = saved.revealedLocations || [];
+      UI.renderAll();
+      Engine.loadNode(saved.currentNode);
+      document.getElementById('save-modal').style.display = 'none';
+      this.showScreen('game');
+      UI.notify('Jogo carregado!', 'success');
+    }
+  },
+
+  /** Limpa save de um slot */
+  clearSave(slotIndex) {
+    Storage.clearSlot(slotIndex);
+    this.showSaveSlots();
+    UI.notify('Slot limpo.', 'info');
+  },
+
   /** Abre tutorial */
   showTutorial() {
     Tutorial.init();
@@ -590,4 +646,52 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   App.init();
+
+  // Swipe navigation para mobile
+  let touchStartX = 0;
+  let touchEndX = 0;
+
+  document.addEventListener('touchstart', (e) => {
+    touchStartX = e.changedTouches[0].screenX;
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    touchEndX = e.changedTouches[0].screenX;
+    handleSwipe();
+  }, { passive: true });
+
+  function handleSwipe() {
+    const diff = touchStartX - touchEndX;
+    const absDiff = Math.abs(diff);
+
+    // Mínimo de 80px para considerar swipe
+    if (absDiff < 80) return;
+
+    // Swipe left — próximo painel
+    if (diff > 0) {
+      const game = document.getElementById('screen-game');
+      if (game.classList.contains('show-character')) {
+        game.classList.remove('show-character');
+        document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
+        document.querySelector('.mobile-tab[data-tab="scene"]').classList.add('active');
+      } else if (game.classList.contains('show-map')) {
+        game.classList.remove('show-map');
+        document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
+        document.querySelector('.mobile-tab[data-tab="scene"]').classList.add('active');
+      }
+    }
+    // Swipe right — abrir painel
+    else {
+      const activeTab = document.querySelector('.mobile-tab.active');
+      if (activeTab?.dataset.tab === 'scene') {
+        document.getElementById('screen-game').classList.add('show-map');
+        document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
+        document.querySelector('.mobile-tab[data-tab="map"]').classList.add('active');
+      } else if (activeTab?.dataset.tab === 'map') {
+        document.getElementById('screen-game').classList.add('show-character');
+        document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
+        document.querySelector('.mobile-tab[data-tab="character"]').classList.add('active');
+      }
+    }
+  }
 });

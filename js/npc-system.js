@@ -7,6 +7,7 @@
 const NPCSystem = {
   npcs: [],
   pendingNPCEvents: [],
+  routeLines: [],
 
   /** Inicializa NPCs a partir dos dados do cenário */
   init(npcDefs) {
@@ -29,6 +30,35 @@ const NPCSystem = {
   /** Todos os NPCs vivos */
   allAlive() {
     return this.npcs.filter(n => n.alive);
+  },
+
+  /** Desenha rotas de patrulha no mapa */
+  drawRoutes(map) {
+    // Remove rotas anteriores
+    this.routeLines.forEach(l => map.removeLayer(l));
+    this.routeLines = [];
+
+    this.npcs.filter(n => n.alive).forEach(npc => {
+      if (npc.routes.length < 2) return;
+
+      const points = npc.routes.map(r => [r.lat, r.lng]);
+      const color = npc.allegiance === 'aliado' ? '#00e676' :
+                    npc.allegiance === 'inimigo' ? '#e53935' : '#ffb300';
+
+      const route = L.polyline(points, {
+        color: color,
+        weight: 2,
+        opacity: 0.4,
+        dashArray: '8, 8'
+      }).addTo(map);
+
+      // marcador de início e fim
+      L.circleMarker(points[0], {
+        radius: 4, color: color, fillColor: color, fillOpacity: 0.6
+      }).addTo(map);
+
+      this.routeLines.push(route);
+    });
   },
 
   /** Move NPCs automaticamente baseado na cena atual */

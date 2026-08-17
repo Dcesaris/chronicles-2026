@@ -182,6 +182,35 @@ const UI = {
     document.getElementById('stat-rep-bar').style.width = `${(stats.rep / stats.maxRep) * 100}%`;
 
     document.getElementById('stat-credits-val').textContent = s.credits;
+
+    // Stats estilo Davia
+    const infEl = document.getElementById('stat-influence-val');
+    if (infEl) {
+      infEl.textContent = stats.influence;
+      const infBar = document.getElementById('stat-influence-bar');
+      if (infBar) infBar.style.width = `${stats.influence}%`;
+    }
+
+    const morEl = document.getElementById('stat-morale-val');
+    if (morEl) {
+      morEl.textContent = stats.morale;
+      const morBar = document.getElementById('stat-morale-bar');
+      if (morBar) morBar.style.width = `${stats.morale}%`;
+    }
+
+    const resEl = document.getElementById('stat-resources-val');
+    if (resEl) {
+      resEl.textContent = stats.resources;
+      const resBar = document.getElementById('stat-resources-bar');
+      if (resBar) resBar.style.width = `${Math.min(100, stats.resources / 10)}%`;
+    }
+
+    const netEl = document.getElementById('stat-network-val');
+    if (netEl) {
+      netEl.textContent = stats.network;
+      const netBar = document.getElementById('stat-network-bar');
+      if (netBar) netBar.style.width = `${stats.network}%`;
+    }
   },
 
   /** Atualiza traços */

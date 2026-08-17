@@ -200,7 +200,7 @@ const MapSystem = {
     }
   },
 
-  /** Atualiza Fog of War */
+  /** Atualiza Fog of War com áreas descobertas persistentes */
   updateFogOfWar() {
     // Remove fogos anteriores
     this.fogCircles.forEach(c => this.map.removeLayer(c));
@@ -211,30 +211,39 @@ const MapSystem = {
     const loc = LOCATIONS[this.currentLocation];
     if (!loc) return;
 
-    // Círculo de visão revelada
-    const revealRadius = 0.012; // ~1.3km
+    // Círculo de visão revelada (raio maior)
+    const revealRadius = 0.015; // ~1.7km
     const revealCircle = L.circle([loc.lat, loc.lng], {
-      radius: revealRadius * 111000, // converter para metros
+      radius: revealRadius * 111000,
       color: '#00ffff',
       fillColor: '#00ffff',
-      fillOpacity: 0.05,
+      fillOpacity: 0.08,
       weight: 1,
-      opacity: 0.3
+      opacity: 0.4
     }).addTo(this.map);
     this.fogCircles.push(revealCircle);
 
+    // Revelar locais próximos automaticamente
+    for (const [key, l] of Object.entries(LOCATIONS)) {
+      const dist = Math.sqrt(Math.pow(loc.lat - l.lat, 2) + Math.pow(loc.lng - l.lng, 2));
+      if (dist < revealRadius * 1.5 && !this.revealedAreas.includes(key)) {
+        this.revealedAreas.push(key);
+        this.addLocationMarker(key);
+      }
+    }
+
     // Círculos de "fog" (escuridão) ao redor
-    for (let i = 0; i < 6; i++) {
-      const angle = (i / 6) * Math.PI * 2;
-      const dist = revealRadius * 1.5 + Math.random() * 0.01;
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * Math.PI * 2;
+      const dist = revealRadius * 2 + Math.random() * 0.015;
       const fogLat = loc.lat + Math.cos(angle) * dist;
       const fogLng = loc.lng + Math.sin(angle) * dist;
 
       const fog = L.circle([fogLat, fogLng], {
-        radius: 800,
+        radius: 1000,
         color: 'transparent',
         fillColor: '#0a0a0f',
-        fillOpacity: 0.4
+        fillOpacity: 0.5
       }).addTo(this.map);
       this.fogCircles.push(fog);
     }
@@ -425,6 +434,9 @@ const MapSystem = {
         description: npc.description
       });
     });
+
+    // Redesenha rotas de patrulha
+    NPCSystem.drawRoutes(this.map);
 
     // Marcadores de locais revelados
     this.revealedAreas.forEach(loc => this.addLocationMarker(loc));
