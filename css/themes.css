@@ -1,0 +1,203 @@
+/* ============================================
+   CHRONICLES 2026 — Temas por Cenário
+   ============================================ */
+
+/* Neo-Tóquio Cyberpunk */
+[data-scenario="neotokyo"] .scene-background {
+  background:
+    linear-gradient(180deg, #0a0a0a 0%, #1a0a1a 40%, #0a0a1a 100%);
+}
+
+[data-scenario="neotokyo"] .scene-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(255, 0, 255, 0.015) 2px, rgba(255, 0, 255, 0.015) 4px);
+  pointer-events: none;
+}
+
+[data-scenario="neotokyo"] .choice-card:hover {
+  border-color: #ff00ff;
+  box-shadow: 0 0 15px rgba(255, 0, 255, 0.2);
+}
+
+[data-scenario="neotokyo"] .narrative-text .speaker {
+  color: #ff00ff;
+}
+
+/* Londres Pós-Brexit */
+[data-scenario="london"] .scene-background {
+  background:
+    linear-gradient(180deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+}
+
+[data-scenario="london"] .choice-card:hover {
+  border-color: #C5A059;
+  box-shadow: 0 0 15px rgba(197, 160, 89, 0.2);
+}
+
+[data-scenario="london"] .narrative-text .speaker {
+  color: #C5A059;
+}
+
+/* São Paulo 2026 */
+[data-scenario="saopaulo"] .scene-background {
+  background:
+    linear-gradient(180deg, #0a0f0a 0%, #1a2e1a 40%, #0d2010 100%);
+}
+
+[data-scenario="saopaulo"] .scene-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse at 70% 30%, rgba(0, 230, 118, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 20% 70%, rgba(255, 111, 0, 0.04) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+[data-scenario="saopaulo"] .choice-card:hover {
+  border-color: #00e676;
+  box-shadow: 0 0 15px rgba(0, 230, 118, 0.2);
+}
+
+[data-scenario="saopaulo"] .narrative-text .speaker {
+  color: #00e676;
+}
+
+/* Singapura */
+[data-scenario="singapura"] .scene-background {
+  background:
+    linear-gradient(180deg, #0a0a1e 0%, #0d1b2a 40%, #1b2838 100%);
+}
+
+[data-scenario="singapura"] .choice-card:hover {
+  border-color: #0288D1;
+  box-shadow: 0 0 15px rgba(2, 136, 209, 0.2);
+}
+
+[data-scenario="singapura"] .narrative-text .speaker {
+  color: #0288D1;
+}
+
+/* Zona de Desastre */
+[data-scenario="desastre"] .scene-background {
+  background:
+    linear-gradient(180deg, #1a0f0a 0%, #2a1a0f 40%, #1a1008 100%);
+}
+
+[data-scenario="desastre"] .scene-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent,
+      transparent 10px,
+      rgba(118, 255, 3, 0.015) 10px,
+      rgba(118, 255, 3, 0.015) 20px
+    );
+  pointer-events: none;
+}
+
+[data-scenario="desastre"] .choice-card:hover {
+  border-color: #76FF03;
+  box-shadow: 0 0 15px rgba(118, 255, 3, 0.2);
+}
+
+[data-scenario="desastre"] .narrative-text .speaker {
+  color: #76FF03;
+}
+
+/* ============================================
+   LOCALIZAÇÃO ESPECÍFICA — Backgrounds
+   ============================================ */
+
+/* São Paulo locações */
+[data-location="pinheiros"] .scene-background {
+  background: linear-gradient(180deg, #0d1a0d 0%, #1a2e1a 50%, #0a150a 100%);
+}
+
+[data-location="consolacao"] .scene-background {
+  background: linear-gradient(180deg, #1a1a0a 0%, #2e2e1a 50%, #0a0a05 100%);
+}
+
+[data-location="liberdade"] .scene-background {
+  background: linear-gradient(180deg, #1a0a0a 0%, #2e1a1a 50%, #150a0a 100%);
+}
+
+[data-location="barra-funda"] .scene-background {
+  background: linear-gradient(180deg, #0a0a1a 0%, #1a1a2e 50%, #050510 100%);
+}
+
+[data-location="mooca"] .scene-background {
+  background: linear-gradient(180deg, #1a100a 0%, #2e2010 50%, #100805 100%);
+}
+
+[data-location="tiete"] .scene-background {
+  background: linear-gradient(180deg, #0a1520 0%, #1a2a3a 50%, #050d15 100%);
+}
+
+[data-location="santa-irem"] .scene-background {
+  background: linear-gradient(180deg, #1a0a15 0%, #2e1a25 50%, #150a10 100%);
+}
+
+[data-location="pinheirinho"] .scene-background {
+  background: linear-gradient(180deg, #1a1a1a 0%, #2e2e2e 50%, #0a0a0a 100%);
+}
+
+[data-location="hospital"] .scene-background {
+  background: linear-gradient(180deg, #0a1a1a 0%, #1a2e2e 50%, #051515 100%);
+}
+
+[data-location="toca"] .scene-background {
+  background: linear-gradient(180deg, #0a0a0a 0%, #151515 50%, #050505 100%);
+}
+
+[data-location="piranhaba"] .scene-background {
+  background: linear-gradient(180deg, #1a150a 0%, #2e2810 50%, #0f0d05 100%);
+}
+
+/* ============================================
+   MAPA — Sobreposições
+   ============================================ */
+#map-container {
+  position: relative;
+}
+
+#map-container .leaflet-container {
+  background: #0a0a0f !important;
+  font-family: var(--font-ui) !important;
+}
+
+/* Fog of war overlay */
+.fog-overlay {
+  pointer-events: none;
+}
+
+/* ============================================
+   ANIMAÇÕES DO MAPA
+   ============================================ */
+.map-marker-player {
+  transition: all 1s ease-out;
+}
+
+.map-marker-npc {
+  transition: all 1s ease-out;
+}
+
+/* ============================================
+   ZONA DE COMBATE
+   ============================================ */
+.combat-zone {
+  animation: pulse 2s infinite;
+}
+
+/* ============================================
+   UTILITÁRIOS
+   ============================================ */
+.text-glow {
+  text-shadow: 0 0 10px currentColor;
+}

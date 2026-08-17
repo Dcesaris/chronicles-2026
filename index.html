@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-scenario="saopaulo" data-theme="saopaulo">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0a0a0f" />
+  <title>Chronicles 2026 — RPG Sandbox</title>
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <!-- Styles -->
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/themes.css" />
+  <link rel="stylesheet" href="css/animations.css" />
+
+  <style>
+    /* Leaflet custom overrides */
+    .leaflet-container { background: #0a0a0f !important; }
+    .leaflet-control-zoom a { background: rgba(10,10,15,0.85) !important; color: var(--accent) !important; border-color: var(--border-glass) !important; }
+    .leaflet-control-attribution { background: rgba(10,10,15,0.7) !important; color: var(--text-muted) !important; font-size: 9px !important; }
+    .leaflet-control-attribution a { color: var(--accent) !important; }
+
+    /* Custom map markers */
+    .marker-player {
+      width: 20px; height: 20px;
+      background: var(--accent);
+      border: 3px solid #fff;
+      border-radius: 50%;
+      box-shadow: 0 0 12px var(--accent);
+      animation: pulse 2s infinite;
+    }
+    .marker-npc-ally {
+      width: 16px; height: 16px;
+      background: #00e676;
+      border: 2px solid #fff;
+      border-radius: 50%;
+    }
+    .marker-npc-neutral {
+      width: 16px; height: 16px;
+      background: #ffb300;
+      border: 2px solid #fff;
+      border-radius: 50%;
+    }
+    .marker-npc-hostile {
+      width: 16px; height: 16px;
+      background: #e53935;
+      border: 2px solid #fff;
+      border-radius: 50%;
+    }
+    .marker-landmark {
+      width: 14px; height: 14px;
+      background: #7c4dff;
+      border: 2px solid #fff;
+      border-radius: 3px;
+    }
+    .marker-event {
+      width: 12px; height: 12px;
+      background: #ff6f00;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      animation: pulse 1.5s infinite;
+    }
+
+    /* Fog overlay */
+    .fog-cell {
+      opacity: 0.85;
+      pointer-events: none;
+    }
+
+    /* Faction zones */
+    .faction-zone {
+      opacity: 0.15;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    /* Route polyline */
+    .route-line {
+      stroke-dasharray: 10, 6;
+      animation: dashMove 1s linear infinite;
+    }
+    @keyframes dashMove {
+      to { stroke-dashoffset: -16; }
+    }
+
+    /* Leaflet popup custom */
+    .leaflet-popup-content-wrapper {
+      background: rgba(10,10,20,0.95) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border-glass) !important;
+      border-radius: 8px !important;
+      backdrop-filter: blur(12px);
+    }
+    .leaflet-popup-tip { background: rgba(10,10,20,0.95) !important; }
+    .leaflet-popup-content { font-family: var(--font-ui) !important; font-size: 13px !important; margin: 8px 12px !important; }
+    .popup-title { font-family: var(--font-title); font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .popup-desc { color: var(--text-secondary); font-size: 12px; }
+    .popup-btn { display: inline-block; margin-top: 6px; padding: 3px 10px; border: 1px solid var(--accent); border-radius: 4px; color: var(--accent); font-size: 11px; cursor: pointer; background: transparent; font-family: var(--font-ui); }
+    .popup-btn:hover { background: rgba(0,255,255,0.1); }
+
+    /* Map section in sidebar */
+    #map-panel { height: 260px; }
+    #map-panel .leaflet-container { height: 100%; width: 100%; }
+
+    /* Full map modal */
+    #full-map-modal {
+      position: fixed; inset: 0; z-index: 800;
+      background: rgba(5,5,10,0.95);
+      display: none; flex-direction: column;
+    }
+    #full-map-modal.active { display: flex; }
+    #full-map-container { flex: 1; }
+    #full-map-container .leaflet-container { height: 100%; width: 100%; }
+    .full-map-header {
+      padding: 0.75rem 1rem;
+      background: var(--bg-panel);
+      border-bottom: 1px solid var(--border-glass);
+      display: flex; align-items: center; justify-content: space-between;
+      backdrop-filter: blur(12px);
+    }
+    .full-map-header h3 { font-family: var(--font-title); font-size: 1rem; }
+  </style>
+</head>
+<body>
+
+<!-- ============================================
+     TELA: TÍTULO
+     ============================================ -->
+<div id="screen-title" class="screen active">
+  <div class="title-container">
+    <h1>CHRONICLES 2026</h1>
+    <p class="subtitle">RPG Sandbox &mdash; Seu mundo, suas escolhas</p>
+    <div class="title-buttons">
+      <button class="btn btn-accent" onclick="App.showScreen('scenarios')">
+        <i class="fa-solid fa-play"></i> &nbsp;Jogar
+      </button>
+      <button class="btn" onclick="App.showScreen('scenarios'); StoryCreator.open()">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> &nbsp;Criador de Mundos
+      </button>
+      <button class="btn" onclick="App.showTutorial()">
+        <i class="fa-solid fa-book-open"></i> &nbsp;Como Jogar
+      </button>
+      <button class="btn" onclick="App.showAchievements()">
+        <i class="fa-solid fa-trophy"></i> &nbsp;Conquistas
+      </button>
+      <button class="btn" onclick="App.showSettings()">
+        <i class="fa-solid fa-gear"></i> &nbsp;Configurações
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     TELA: SELEÇÃO DE CENÁRIOS
+     ============================================ -->
+<div id="screen-scenarios" class="screen">
+  <div class="scenarios-header">
+    <h2><i class="fa-solid fa-globe"></i> &nbsp;Escolha seu Cenário</h2>
+    <button class="btn-back" onclick="App.showScreen('title')">
+      <i class="fa-solid fa-arrow-left"></i> Voltar
+    </button>
+  </div>
+  <div class="scenarios-grid" id="scenarios-grid">
+    <!-- Cards gerados via JS -->
+  </div>
+</div>
+
+<!-- ============================================
+     TELA: WIZARD DE CRIAÇÃO
+     ============================================ -->
+<div id="screen-wizard" class="screen">
+  <div class="wizard-header">
+    <h2 id="wizard-title">Criar Personagem</h2>
+    <div class="wizard-progress">
+      <div class="wizard-step-dot active" data-step="1"></div>
+      <div class="wizard-step-dot" data-step="2"></div>
+      <div class="wizard-step-dot" data-step="3"></div>
+    </div>
+    <button class="btn-back" onclick="App.showScreen('scenarios')">
+      <i class="fa-solid fa-times"></i>
+    </button>
+  </div>
+
+  <!-- Passo 1: Personagem -->
+  <div class="wizard-body" id="wizard-step1">
+    <div class="wizard-panel">
+      <h2>Quem você é?</h2>
+      <p class="step-desc">Defina seu personagem para 2026. Suas escolhas moldam como o mundo reage a você.</p>
+
+      <div class="form-group">
+        <label>Nome</label>
+        <input type="text" id="char-name" placeholder="Seu nome..." maxlength="30" />
+      </div>
+
+      <div class="form-group">
+        <label>Profissão / Origem em 2026</label>
+        <select id="char-profession">
+          <option value="reporter">Repórter Investigativo</option>
+          <option value="hacker">Hacker / Anonym</option>
+          <option value="influencer">Influencer Digital</option>
+          <option value="soldier">Ex-Militar</option>
+          <option value="doctor">Médico(a)</option>
+          <option value="entrepreneur">Empreendedor(a) Tech</option>
+          <option value="journalist">Jornalista</option>
+          <option value="activist">Ativista Social</option>
+          <option value="detective">Detetive Particular</option>
+          <option value="street">Morador de Rua</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>3 Traços de Personalidade</label>
+        <div class="trait-selector" id="trait-selector">
+          <!-- Traços gerados via JS -->
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Avatar (Emoji)</label>
+        <input type="text" id="char-avatar" placeholder="🎭" maxlength="4" value="🎭" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Passo 2: Mundo -->
+  <div class="wizard-body" id="wizard-step2" style="display:none">
+    <div class="wizard-panel">
+      <h2>Tom da História</h2>
+      <p class="step-desc">Como o mundo reage às suas ações? Escolha o tom叙事.</p>
+
+      <div class="form-group">
+        <label>Tom叙事</label>
+        <div class="tone-selector">
+          <div class="tone-btn" data-tone="sombrio" onclick="Wizard.selectTone(this)">
+            <h4>🌑 Sombrio</h4>
+            <p>Decisões difíceis, consequências severas</p>
+          </div>
+          <div class="tone-btn selected" data-tone="neutro" onclick="Wizard.selectTone(this)">
+            <h4>⚖️ Neutro</h4>
+            <p>Equilíbrio entre luz e sombra</p>
+          </div>
+          <div class="tone-btn" data-tone="heroico" onclick="Wizard.selectTone(this)">
+            <h4>🌟 Heroico</h4>
+            <p>Oportunidades, aliados, esperança</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Dificuldade</label>
+        <select id="game-difficulty">
+          <option value="easy">Fácil — O mundo ajuda quando pode</option>
+          <option value="normal" selected>Normal — Mundo equilibrado</option>
+          <option value="hard">Difícil — O mundo pushes back</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Realismo</label>
+        <select id="game-realism">
+          <option value="arcade">Arcade — Consequências simplificadas</option>
+          <option value="immersive" selected>Imersivo — Mundo detalhado</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Passo 3: Mapa -->
+  <div class="wizard-body" id="wizard-step3" style="display:none">
+    <div class="wizard-panel" style="max-width: 700px; display: flex; flex-direction: column; gap: 1rem;">
+      <h2>Escolha seu Ponto de Partida</h2>
+      <p class="step-desc">Clique no mapa para definir onde sua história começa em São Paulo 2026.</p>
+      <div id="wizard-map" style="height: 320px; border-radius: 12px; border: 1px solid var(--border-glass); overflow: hidden;"></div>
+      <p id="wizard-map-info" style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-terminal);">
+        Clique no mapa para selecionar seu início
+      </p>
+    </div>
+  </div>
+
+  <div class="wizard-footer">
+    <button class="btn-back" id="wizard-prev" onclick="Wizard.prevStep()" style="visibility: hidden;">
+      <i class="fa-solid fa-arrow-left"></i> Voltar
+    </button>
+    <button class="btn-next" id="wizard-next" onclick="Wizard.nextStep()">
+      Próximo <i class="fa-solid fa-arrow-right"></i>
+    </button>
+  </div>
+</div>
+
+<!-- ============================================
+     TELA: JOGO PRINCIPAL
+     ============================================ -->
+<div id="screen-game" class="screen">
+  <!-- Coluna Esquerda: Personagem -->
+  <div class="panel-character" id="panel-character">
+    <div class="char-avatar-section">
+      <div class="char-avatar" id="char-avatar-display">🎭</div>
+      <div class="char-name" id="char-name-display">Nome</div>
+      <div class="char-profession" id="char-profession-display">Profissão</div>
+      <div class="char-location" id="char-location-display">📍 Local desconhecido</div>
+    </div>
+
+    <div class="char-stats">
+      <div class="stat-row">
+        <div class="stat-label"><span>HP</span><span id="stat-hp-val">100/100</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill hp" id="stat-hp-bar" style="width:100%"></div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label"><span>Energia</span><span id="stat-energy-val">100/100</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill energy" id="stat-energy-bar" style="width:100%"></div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label"><span>Reputação</span><span id="stat-rep-val">50/100</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill rep" id="stat-rep-bar" style="width:50%"></div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label"><span>Créditos R$</span><span id="stat-credits-val">500</span></div>
+      </div>
+    </div>
+
+    <div class="char-traits">
+      <h4><i class="fa-solid fa-tag"></i> Traços Ativos</h4>
+      <div class="traits-list" id="traits-list"></div>
+    </div>
+
+    <div class="char-inventory">
+      <h4><i class="fa-solid fa-box"></i> Inventário</h4>
+      <div class="inventory-grid" id="inventory-grid"></div>
+    </div>
+
+    <div class="world-diary">
+      <h4><i class="fa-solid fa-scroll"></i> Diário do Mundo</h4>
+      <div class="diary-entries" id="diary-entries">
+        <div class="diary-entry">
+          <span class="entry-timestamp">2026-01-01</span>
+          A história começa...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Coluna Central: Cena -->
+  <div class="panel-scene" id="panel-scene">
+    <div class="scene-background" id="scene-background"></div>
+    <div class="scene-overlay"></div>
+    <div class="scene-content">
+      <div class="narrative-box" id="narrative-box">
+        <!-- Conteúdo narrativo inserido via JS -->
+      </div>
+      <div class="narrative-choices" id="narrative-choices"></div>
+      <div class="free-input-area">
+        <input type="text" id="free-input" placeholder="Descreva sua ação..." autocomplete="off" />
+        <button onclick="Engine.submitFreeInput()"><i class="fa-solid fa-paper-plane"></i></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Coluna Direita: Mapa -->
+  <div class="panel-map" id="panel-map">
+    <!-- Mini-mapa -->
+    <div class="map-section" id="map-panel">
+      <h4><i class="fa-solid fa-map"></i> Mapa &mdash; <span id="map-location-label">São Paulo</span></h4>
+      <div id="map-container"></div>
+    </div>
+
+    <!-- NPCs conhecidos -->
+    <div class="map-section">
+      <h4><i class="fa-solid fa-users"></i> NPCs</h4>
+      <div class="npc-list" id="npc-list"></div>
+    </div>
+
+    <!-- Missões -->
+    <div class="map-section">
+      <h4><i class="fa-solid fa-flag"></i> Missões</h4>
+      <div class="missions-list" id="missions-list"></div>
+    </div>
+
+    <!-- Notícias -->
+    <div class="map-section" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
+      <h4><i class="fa-solid fa-newspaper"></i> Notícias 2026</h4>
+      <div class="news-feed" id="news-feed"></div>
+    </div>
+
+    <!-- Botão expandir mapa -->
+    <div style="padding: 0.5rem; text-align: center;">
+      <button class="btn-back" style="width:100%;" onclick="MapSystem.expandMap()">
+        <i class="fa-solid fa-expand"></i> Expandir Mapa
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile Tabs -->
+  <div class="mobile-tabs" id="mobile-tabs">
+    <div class="mobile-tab active" data-tab="scene" onclick="App.switchMobileTab('scene')">
+      <i class="fa-solid fa-book"></i> Cena
+    </div>
+    <div class="mobile-tab" data-tab="character" onclick="App.switchMobileTab('character')">
+      <i class="fa-solid fa-user"></i> Personagem
+    </div>
+    <div class="mobile-tab" data-tab="map" onclick="App.switchMobileTab('map')">
+      <i class="fa-solid fa-map"></i> Mapa
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     MODAL: COMBATE / DESAFIO
+     ============================================ -->
+<div id="combat-modal">
+  <div class="combat-container">
+    <h2 id="combat-title">Confronto!</h2>
+    <p class="combat-difficulty" id="combat-difficulty">Dificuldade: ★★★☆☆</p>
+    <p id="combat-description" style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;"></p>
+
+    <div class="dice-container" id="dice-container" style="display:none;">
+      <div class="dice" id="dice">
+        <div class="dice-face" id="dice-face">?</div>
+      </div>
+      <p style="font-size: 0.8rem; color: var(--text-muted);" id="dice-result-text"></p>
+    </div>
+
+    <div class="combat-approaches" id="combat-approaches">
+      <button class="approach-btn" data-approach="forca" onclick="Combat.selectApproach(this)">
+        <i class="fa-solid fa-fist-raised"></i> Força
+      </button>
+      <button class="approach-btn" data-approach="inteligencia" onclick="Combat.selectApproach(this)">
+        <i class="fa-solid fa-brain"></i> Inteligência
+      </button>
+      <button class="approach-btn" data-approach="carisma" onclick="Combat.selectApproach(this)">
+        <i class="fa-solid fa-handshake"></i> Carisma
+      </button>
+      <button class="approach-btn" data-approach="furtividade" onclick="Combat.selectApproach(this)">
+        <i class="fa-solid fa-user-secret"></i> Furtividade
+      </button>
+      <button class="approach-btn" data-approach="tecnologia" onclick="Combat.selectApproach(this)">
+        <i class="fa-solid fa-microchip"></i> Tecnologia
+      </button>
+    </div>
+
+    <button class="btn-next" id="combat-submit" onclick="Combat.resolve()" style="display:none; margin: 1rem auto;">
+      Resolver Confronto
+    </button>
+
+    <div class="combat-result" id="combat-result"></div>
+  </div>
+</div>
+
+<!-- ============================================
+     MODAL: MAPA EXPANDIDO
+     ============================================ -->
+<div id="full-map-modal">
+  <div class="full-map-header">
+    <h3><i class="fa-solid fa-map"></i> Mapa de São Paulo 2026</h3>
+    <button class="btn-back" onclick="MapSystem.collapseMap()">
+      <i class="fa-solid fa-compress"></i> Fechar
+    </button>
+  </div>
+  <div id="full-map-container"></div>
+</div>
+
+<!-- ============================================
+     MODAL: TUTORIAL
+     ============================================ -->
+<div id="tutorial-modal">
+  <div class="tutorial-container">
+    <div class="tutorial-dots" id="tutorial-dots"></div>
+    <div id="tutorial-steps"></div>
+    <div class="tutorial-buttons">
+      <button class="btn-back" id="tutorial-prev" onclick="Tutorial.prev()">
+        <i class="fa-solid fa-arrow-left"></i> Anterior
+      </button>
+      <button class="btn-next" id="tutorial-next" onclick="Tutorial.next()">
+        Próximo <i class="fa-solid fa-arrow-right"></i>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     MODAL: CONQUISTAS
+     ============================================ -->
+<div id="achievements-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;">
+  <div style="width:90%;max-width:600px;max-height:80vh;overflow-y:auto;background:var(--bg-panel);border:1px solid var(--border-glass);border-radius:16px;padding:2rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+      <h2 style="font-family:var(--font-title);"><i class="fa-solid fa-trophy"></i> Conquistas</h2>
+      <button class="btn-back" onclick="document.getElementById('achievements-modal').style.display='none'">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+    <div class="achievements-grid" id="achievements-grid"></div>
+  </div>
+</div>
+
+<!-- ============================================
+     MODAL: CRIADOR DE MUNDOS
+     ============================================ -->
+<div id="creator-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;">
+  <div style="width:95%;max-width:900px;max-height:90vh;overflow-y:auto;background:var(--bg-panel);border:1px solid var(--border-glass);border-radius:16px;padding:2rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+      <h2 style="font-family:var(--font-title);"><i class="fa-solid fa-wand-magic-sparkles"></i> Criador de Mundos</h2>
+      <button class="btn-back" onclick="StoryCreator.close()">
+        <i class="fa-solid fa-times"></i>
+      </button>
+    </div>
+    <div id="creator-content"></div>
+  </div>
+</div>
+
+<!-- ============================================
+     NOTIFICAÇÕES
+     ============================================ -->
+<div id="notification-area"></div>
+
+<!-- ============================================
+     SCRIPTS
+     ============================================ -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/story-data.js"></script>
+<script src="js/npc-system.js"></script>
+<script src="js/map-system.js"></script>
+<script src="js/ai-engine.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/creator-mode.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

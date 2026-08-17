@@ -1,0 +1,225 @@
+/* ============================================
+   CHRONICLES 2026 — Animações
+   ============================================ */
+
+/* Typewriter */
+@keyframes typewriter {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.typewriter-container {
+  overflow: hidden;
+  display: inline-block;
+}
+
+/* Fade stagger para escolhas */
+@keyframes staggerIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-1 { animation: staggerIn 300ms ease 0ms forwards; opacity: 0; }
+.stagger-2 { animation: staggerIn 300ms ease 100ms forwards; opacity: 0; }
+.stagger-3 { animation: staggerIn 300ms ease 200ms forwards; opacity: 0; }
+.stagger-4 { animation: staggerIn 300ms ease 300ms forwards; opacity: 0; }
+.stagger-5 { animation: staggerIn 300ms ease 400ms forwards; opacity: 0; }
+
+/* Dissolve de cena */
+@keyframes sceneDissolve {
+  0% { opacity: 1; filter: blur(0); }
+  50% { opacity: 0; filter: blur(4px); }
+  100% { opacity: 1; filter: blur(0); }
+}
+
+.scene-dissolve {
+  animation: sceneDissolve 500ms ease;
+}
+
+/* Notificação slide-in */
+@keyframes notifSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes notifSlideOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+/* Scroll infinito no mapa */
+@keyframes scrollMap {
+  from { background-position: 0 0; }
+  to { background-position: 50px 50px; }
+}
+
+/* D20 roll */
+@keyframes diceRoll3D {
+  0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(1); }
+  10% { transform: rotateX(120deg) rotateY(60deg) rotateZ(30deg) scale(1.2); }
+  25% { transform: rotateX(270deg) rotateY(180deg) rotateZ(90deg) scale(1.3); }
+  50% { transform: rotateX(450deg) rotateY(300deg) rotateZ(180deg) scale(1.2); }
+  75% { transform: rotateX(630deg) rotateY(420deg) rotateZ(270deg) scale(1.1); }
+  90% { transform: rotateX(700deg) rotateY(480deg) rotateZ(330deg) scale(1.05); }
+  100% { transform: rotateX(720deg) rotateY(540deg) rotateZ(360deg) scale(1); }
+}
+
+.dice-rolling {
+  animation: diceRoll3D 0.9s ease-out forwards;
+}
+
+/* Pulse para marcadores */
+@keyframes markerPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+.marker-pulse {
+  animation: markerPulse 2s ease-in-out infinite;
+}
+
+/* Scanline CRT para cenas hacker */
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+.scanline-effect::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(0, 255, 255, 0.1);
+  animation: scanline 3s linear infinite;
+  pointer-events: none;
+}
+
+/* Glow border animado */
+@keyframes borderGlow {
+  0%, 100% { border-color: var(--accent); box-shadow: 0 0 5px var(--accent); }
+  50% { border-color: var(--accent2); box-shadow: 0 0 15px var(--accent2); }
+}
+
+.glow-border {
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
+/* Fade up */
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-up {
+  animation: fadeUp 400ms ease forwards;
+}
+
+/* Shimmer para carregamento */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.05) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* Float para avatares */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+.float-anim {
+  animation: float 3s ease-in-out infinite;
+}
+
+/* Rotina de NPC — movimento no mapa */
+@keyframes npcMove {
+  from { opacity: 0.3; }
+  to { opacity: 1; }
+}
+
+/* Notificação de memória */
+@keyframes memorySlide {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.memory-notif {
+  animation: memorySlide 400ms ease forwards;
+}
+
+/* Terminal blink cursor */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.blink-cursor::after {
+  content: '█';
+  animation: blink 1s step-end infinite;
+  color: var(--accent);
+}
+
+/* Transição de cenário */
+@keyframes scenarioTransition {
+  0% { opacity: 0; transform: scale(0.95); filter: blur(8px); }
+  100% { opacity: 1; transform: scale(1); filter: blur(0); }
+}
+
+.scenario-enter {
+  animation: scenarioTransition 600ms ease forwards;
+}
+
+/* Efeito de digitação com barra */
+@keyframes typeBar {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+.typebar {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  border-right: 2px solid var(--accent);
+  animation: typeBar 2s steps(40) forwards, blink 0.8s step-end infinite;
+}
