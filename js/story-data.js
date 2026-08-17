@@ -36,7 +36,9 @@ const ACHIEVEMENTS = [
   { id: 'rich', name: 'Magnata', desc: 'Acumule 2000+ recursos', icon: '💰', check: (s) => s.stats?.resources >= 2000 },
   { id: 'survivor', name: 'Sobrevivente', desc: 'Sobreviva a 50 turnos', icon: '💀', check: (s) => s.turnNumber >= 50 },
   { id: 'creator', name: 'Criador de Eras', desc: 'Crie um cenário via IA', icon: '✨', check: (s) => s.erasCreated >= 1 },
-  { id: 'historian', name: 'Historiador', desc: 'Jogue em 3 eras diferentes', icon: '📜', check: (s) => s.erasPlayed >= 3 }
+  { id: 'historian', name: 'Historiador', desc: 'Jogue em 3 eras diferentes', icon: '📜', check: (s) => s.erasPlayed >= 3 },
+  { id: 'conqueror', name: 'Conquistador', desc: 'Declare guerra a 3 países', icon: '⚔️', check: (s) => (s.warsDeclared || 0) >= 3 },
+  { id: 'peacemaker', name: 'Pacificador', desc: 'Faça paz com 5 inimigos', icon: '🕊️', check: (s) => (s.peaceTreaties || 0) >= 5 }
 ];
 
 // =============================================
@@ -81,10 +83,41 @@ const NPC_DATA = [
     description: 'Ninguém sabe em quem confiar.',
     routes: [{ lat: 0, lng: 0 }],
     currentRouteIndex: 0
+  },
+  {
+    id: 'journalist_npc',
+    name: 'Repórter',
+    emoji: '📰',
+    role: 'Jornalista',
+    personality: 'investigador',
+    location: { lat: 0, lng: 0 },
+    relation: 10,
+    allegiance: 'neutro',
+    description: 'Sempre buscando a próxima história.',
+    routes: [{ lat: 0, lng: 0 }],
+    currentRouteIndex: 0
+  },
+  {
+    id: 'general',
+    name: 'General',
+    emoji: '🎖️',
+    role: 'Comandante Militar',
+    personality: 'disciplinado',
+    location: { lat: 0, lng: 0 },
+    relation: 0,
+    allegiance: 'neutro',
+    description: 'Comanda as forças armadas. Leal ao estado, não a você.',
+    routes: [{ lat: 0, lng: 0 }],
+    currentRouteIndex: 0
   }
 ];
 
 // =============================================
-// CENÁRIO GLOBAL (único cenário disponível)
+// LOCATIONS GLOBAIS (populados pelo global-scenarios.js)
 // =============================================
-const SCENARIOS = []; // Será populado pelo global-scenarios.js
+const LOCATIONS = {};
+
+// =============================================
+// CENÁRIOS (será populado pelo global-scenarios.js)
+// =============================================
+const SCENARIOS = [];

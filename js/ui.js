@@ -14,17 +14,12 @@ const UI = {
     const box = document.getElementById('narrative-box');
     const choices = document.getElementById('narrative-choices');
 
-    // Limpa
     box.innerHTML = '';
     choices.innerHTML = '';
 
-    // Atualiza background
     this.updateSceneBackground(node.location);
-
-    // Typewriter no texto
     this.typeText(box, node.text);
 
-    // Escolhas aparecem após o texto
     this.typewriterTimeout = setTimeout(() => {
       this.renderChoices(node.choices);
     }, node.text.length * 15 + 500);
@@ -46,24 +41,21 @@ const UI = {
   typeText(container, html) {
     if (this.typewriterTimeout) clearTimeout(this.typewriterTimeout);
 
-    // Remove html anterior
     container.innerHTML = '';
 
     const el = document.createElement('div');
     el.className = 'narrative-text';
     container.appendChild(el);
 
-    // Parse HTML em partes
     const temp = document.createElement('div');
     temp.innerHTML = html;
     const fullText = temp.innerHTML;
 
     let i = 0;
-    const speed = 12; // ms por caractere
+    const speed = 12;
 
     const type = () => {
       if (i < fullText.length) {
-        // Detecta tags HTML
         if (fullText[i] === '<') {
           const closeIdx = fullText.indexOf('>', i);
           if (closeIdx !== -1) {
@@ -75,28 +67,14 @@ const UI = {
           i++;
         }
 
-        // Scroll automático
         container.scrollTop = container.scrollHeight;
         this.typewriterTimeout = setTimeout(type, speed);
       } else {
         el.innerHTML = fullText;
-        el.classList.remove('typing-cursor');
       }
     };
 
     type();
-  },
-
-  /** Adiciona texto à narrativa existente */
-  appendNarrative(html) {
-    const box = document.getElementById('narrative-box');
-    const el = document.createElement('div');
-    el.className = 'narrative-text fade-up';
-    el.style.marginTop = '1rem';
-    el.style.opacity = '0.8';
-    el.innerHTML = html;
-    box.appendChild(el);
-    box.scrollTop = box.scrollHeight;
   },
 
   /** Renderiza escolhas */
@@ -124,7 +102,6 @@ const UI = {
     const bg = document.getElementById('scene-background');
     const html = document.documentElement;
 
-    // Remove classes de localização anterior
     html.removeAttribute('data-location');
 
     if (location && LOCATIONS[location]) {
@@ -134,7 +111,6 @@ const UI = {
 
   /** Renderiza retrato de NPC */
   renderNPCPortrait(npcId) {
-    // Remove retrato anterior
     const existing = document.querySelector('.npc-portrait');
     if (existing) existing.remove();
 
@@ -172,6 +148,25 @@ const UI = {
     this.updateMissions();
     this.updateNews();
     this.updateLocation();
+    this.updateConstraintDisplay();
+  },
+
+  /** Atualiza display de restrição */
+  updateConstraintDisplay() {
+    const dots = document.querySelectorAll('.constraint-dot');
+    const label = document.getElementById('constraint-label');
+    if (!dots.length) return;
+
+    const diff = Engine.state.difficulty || 'normal';
+    dots.forEach((dot, i) => {
+      const levels = ['arcade', 'normal', 'hardcore'];
+      const idx = levels.indexOf(diff);
+      dot.classList.toggle('active', i <= idx);
+      dot.classList.toggle('hard', diff === 'hardcore' && i === 2);
+    });
+
+    const labels = { arcade: 'Arcade', normal: 'Normal', hardcore: 'Hardcore' };
+    if (label) label.textContent = labels[diff] || 'Normal';
   },
 
   /** Atualiza painel do personagem */
@@ -181,6 +176,11 @@ const UI = {
     document.getElementById('char-name-display').textContent = s.playerName;
     document.getElementById('char-profession-display').textContent =
       this.getProfessionLabel(s.profession);
+
+    if (s.country) {
+      document.getElementById('char-profession-display').textContent =
+        `${s.country.leader.title} de ${s.country.name}`;
+    }
   },
 
   /** Atualiza barras de status */
@@ -199,7 +199,6 @@ const UI = {
 
     document.getElementById('stat-credits-val').textContent = s.credits;
 
-    // Stats estilo Davia
     const infEl = document.getElementById('stat-influence-val');
     if (infEl) {
       infEl.textContent = stats.influence;
@@ -227,11 +226,17 @@ const UI = {
       const netBar = document.getElementById('stat-network-bar');
       if (netBar) netBar.style.width = `${stats.network}%`;
     }
+
+    const legEl = document.getElementById('stat-legitimacy-val');
+    if (legEl) {
+      legEl.textContent = stats.legitimacy;
+    }
   },
 
   /** Atualiza traços */
   updateTraits() {
     const container = document.getElementById('traits-list');
+    if (!container) return;
     container.innerHTML = '';
     Engine.state.traits.forEach(t => {
       const trait = TRAITS.find(tr => tr.id === t);
@@ -247,16 +252,11 @@ const UI = {
   /** Atualiza inventário */
   updateInventory() {
     const grid = document.getElementById('inventory-grid');
+    if (!grid) return;
     grid.innerHTML = '';
 
-    const items = [
-      { icon: '📱', name: 'Celular' },
-      { icon: '🔑', name: 'Chaves' },
-      { icon: '💳', name: 'Carteira' },
-      { icon: '🔦', name: 'Lanterna' }
-    ];
-
-    Engine.state.inventory.forEach((item, i) => {
+    const items = Engine.state.inventory || [];
+    items.forEach(item => {
       const slot = document.createElement('div');
       slot.className = 'inv-slot filled';
       slot.textContent = item.icon;
@@ -264,8 +264,8 @@ const UI = {
       grid.appendChild(slot);
     });
 
-    // Slots vazios
-    for (let i = Engine.state.inventory.length; i < Engine.state.maxSlots; i++) {
+    const max = Engine.state.maxSlots || 10;
+    for (let i = items.length; i < max; i++) {
       const slot = document.createElement('div');
       slot.className = 'inv-slot';
       grid.appendChild(slot);
@@ -275,9 +275,10 @@ const UI = {
   /** Atualiza diário */
   renderJournal() {
     const container = document.getElementById('diary-entries');
+    if (!container) return;
     container.innerHTML = '';
 
-    const entries = Engine.state.journal.slice(-15).reverse();
+    const entries = (Engine.state.journal || []).slice(-15).reverse();
     entries.forEach(entry => {
       const el = document.createElement('div');
       el.className = 'diary-entry';
@@ -289,6 +290,7 @@ const UI = {
   /** Atualiza lista de NPCs */
   updateNPCs() {
     const container = document.getElementById('npc-list');
+    if (!container) return;
     container.innerHTML = '';
 
     const npcData = NPCSystem.getSidebarData();
@@ -312,13 +314,14 @@ const UI = {
   /** Atualiza missões */
   updateMissions() {
     const container = document.getElementById('missions-list');
+    if (!container) return;
     container.innerHTML = '';
 
-    const missions = [
-      { title: 'Investigue a mensagem anônima', status: 'ativa', completed: false },
-      { title: 'Encontre Gareth na Liberdade', status: 'ativa', completed: false },
-      { title: 'Desmascare a Sentinela Corp', status: 'ativa', completed: false }
-    ];
+    const missions = (Engine.state.activeMissions || []).slice(0, 5);
+    if (missions.length === 0) {
+      container.innerHTML = '<p style="font-size:0.75rem;color:var(--text-muted);text-align:center;padding:0.5rem;">Ações gerarão missões conforme você joga.</p>';
+      return;
+    }
 
     missions.forEach(m => {
       const el = document.createElement('div');
@@ -334,6 +337,7 @@ const UI = {
   /** Adiciona notícia ao feed */
   async addNews(headline) {
     const container = document.getElementById('news-feed');
+    if (!container) return;
     const el = document.createElement('div');
     el.className = 'news-item memory-notif';
     el.innerHTML = `
@@ -342,15 +346,6 @@ const UI = {
     `;
     container.insertBefore(el, container.firstChild);
 
-    // Tenta gerar headline com IA
-    if (AIEngine.enabled && headline.includes('{{')) {
-      const aiHeadline = await AIEngine.generateNews(headline);
-      if (aiHeadline) {
-        el.querySelector('.news-headline').textContent = aiHeadline;
-      }
-    }
-
-    // Limita notícias
     while (container.children.length > 10) {
       container.removeChild(container.lastChild);
     }
@@ -358,15 +353,18 @@ const UI = {
 
   /** Atualiza feed de notícias */
   updateNews() {
-    const defaults = [
-      'Sentinela Corp anuncia novo contrato de segurança com prefeitura',
-      'Protestos crescem em São Paulo contra vigilância estatal',
-      'Qualidade do ar em SP atinge nível "perigoso" na manhã de hoje',
-      'Prefeito Carvalho nega envolvimento em escândalos de 2024',
-      'Nova lei de segurança pública gera debate no Congresso'
-    ];
     const container = document.getElementById('news-feed');
+    if (!container) return;
+
     if (container.children.length === 0) {
+      const country = Engine.state.country;
+      const defaults = country?.news || [
+        'Líderes mundiais se reunem para discutir crise climática',
+        'Novo tratado comercial é assinado entre nações do BRICS',
+        'Tensões crescem no Estreito de Taiwim',
+        'IA generativa supera expectativas em testes globais',
+        'Protestos eclodem em várias capitais do mundo'
+      ];
       defaults.slice(0, 3).forEach(d => this.addNews(d));
     }
   },
@@ -376,45 +374,28 @@ const UI = {
     const loc = LOCATIONS[Engine.state.currentLocation];
     const el = document.getElementById('char-location-display');
     const mapLabel = document.getElementById('map-location-label');
-    if (loc) {
-      el.textContent = `📍 ${loc.name}`;
-      if (mapLabel) mapLabel.textContent = loc.name;
-    }
+
+    const country = Engine.state.country;
+    const locationName = country?.name || loc?.name || 'Mundo';
+
+    if (el) el.textContent = `📍 ${locationName}`;
+    if (mapLabel) mapLabel.textContent = locationName;
   },
 
   /** Mostra final do jogo */
   showEnding(ending) {
-    const endings = {
-      heroic: {
-        title: '✨ FIM — Justiça Pública',
-        text: `Você expôs a verdade. A Sentinela Corp foi dissolvida, o prefeito Carvalho foi condenado, e São Paulo pode finalmente respirar. O mapa da cidade brilha diferente agora — menos sombras, mais luz.\n\n<span class="speaker">Obrigado por jogar Chronicles 2026.</span>`
-      },
-      dark: {
-        title: '🌑 FIM — O Novo Orden',
-        text: `Você escolheu o caminho do poder. A Sentinela agora opera sob nova liderança, e você é parte dela. São Paulo permanece como sempre foi — uma cidade de luzes e sombras.\n\n<span class="speaker">Obrigado por jogar Chronicles 2026.</span>`
-      },
-      escape: {
-        title: '✈️ FIM — Fuga',
-        text: `Você sobreviveu. As provas estão seguras em algum lugar, esperando o dia certo para serem reveladas. São Paulo fica para trás, mas a memória permanece.\n\n<span class="speaker">Obrigado por jogar Chronicles 2026.</span>`
-      },
-      death: {
-        title: '💀 FIM — Derrota',
-        text: `Suas forças falharam. A cidade continua girando indiferente, mas sua história... sua história foi apenas começada.\n\n<span class="speaker">Tente novamente. O mundo responde a quem persiste.</span>`
-      }
-    };
-
-    const end = endings[ending] || endings.death;
-
     const box = document.getElementById('narrative-box');
     box.innerHTML = `
       <div style="text-align:center;padding:2rem;">
-        <h2 style="font-family:var(--font-title);margin-bottom:1rem;color:var(--accent);">${end.title}</h2>
-        <p style="font-family:var(--font-narration);line-height:1.8;max-width:500px;margin:0 auto;">${end.text}</p>
+        <h2 style="font-family:var(--font-title);margin-bottom:1rem;color:var(--accent);">✨ FIM — Sua História</h2>
+        <p style="font-family:var(--font-narration);line-height:1.8;max-width:500px;margin:0 auto;">
+          Obrigado por jogar Chronicles 2026. Sua história no sandbox global foi única.
+        </p>
         <div style="margin-top:2rem;">
           <button class="btn btn-accent" onclick="App.showScreen('title')" style="margin-right:0.5rem;">
             <i class="fa-solid fa-home"></i> Menu Principal
           </button>
-          <button class="btn" onclick="App.showScreen('scenarios')" style="margin-left:0.5rem;">
+          <button class="btn" onclick="App.showScreen('title')">
             <i class="fa-solid fa-redo"></i> Novo Jogo
           </button>
         </div>
@@ -441,16 +422,18 @@ const UI = {
   /** Helper: label de profissão */
   getProfessionLabel(id) {
     const labels = {
+      leader: 'Líder Político',
       reporter: 'Repórter Investigativo',
       hacker: 'Hacker / Anonym',
       influencer: 'Influencer Digital',
       soldier: 'Ex-Militar',
       doctor: 'Médico(a)',
-      entrepreneur: 'Empreendedor(a) Tech',
+      entrepreneur: 'Empreendedor(a)',
       journalist: 'Jornalista',
       activist: 'Ativista Social',
       detective: 'Detetive Particular',
-      street: 'Morador de Rua'
+      street: 'Morador de Rua',
+      diplomat: 'Diplomata'
     };
     return labels[id] || id;
   }

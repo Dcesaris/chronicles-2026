@@ -24,14 +24,19 @@ const AIEngine = {
   async generateNarrative(context, action) {
     if (!this.enabled) return null;
 
-    const systemPrompt = `Você é um mestre de RPG sandbox ambientado em São Paulo, 2026.
-O jogador está em ${context.location || 'São Paulo'}.
-Traços do personagem: ${context.traits || 'nenhum'}.
-Histórico recente: ${context.recentEvents || 'início da aventura'}.
-Tom da história: ${context.tone || 'neutro'}.
+    const systemPrompt = `Você é um mestre de RPG sandbox mundial ambientado em 2026.
+O jogador é um líder mundial que pode tomar qualquer decisão.
+Local atual: ${context.location || 'Mundo'}
+País: ${context.country || 'Nenhum'}
+Líder: ${context.leader || context.playerName} (${context.title || context.profession})
+Tom da história: ${context.tone || 'neutro'}
+Nível de restrição: ${context.difficulty || 'normal'}
 
 Responda com uma narração breve (2-4 parágrafos) em português do Brasil.
-Inclua opções de ação numeradas no final.
+Seja realista baseado no nível de restrição:
+- Arcade: consequências leves, mundo maleável
+- Normal: consequências proporcionais
+- Hardcore: consequências severas, realismo máximo
 NUNCA revele que é uma IA. Mantenha imersão total.`;
 
     try {
@@ -47,7 +52,7 @@ NUNCA revele que é uma IA. Mantenha imersão total.`;
             { role: 'system', content: systemPrompt },
             { role: 'user', content: action }
           ],
-          max_tokens: 500,
+          max_tokens: 600,
           temperature: 0.8
         })
       });
@@ -60,76 +65,6 @@ NUNCA revele que é uma IA. Mantenha imersão total.`;
       console.error('[AIEngine] Erro:', err);
       return null;
     }
-  },
-
-  /** Gera diálogos de NPCs */
-  async generateNPCDialogue(npc, playerAction, relation) {
-    if (!this.enabled) return null;
-
-    const persona = {
-      gareth: 'hacker deserador da Sentinela, desconfiado mas leal',
-      lyra: 'líder estudantil revolucionária, apaixonada',
-      viktor: 'chefe de segurança mercenário, frio e calculista',
-      rafael: 'ativista do morro, desesperado mas esperançoso',
-      'dona_celia': 'velha faxineira sábia, mãe de bairro',
-      prefeito: 'político carismático mas corrupto'
-    };
-
-    const prompt = `${npc.name} (${persona[npc.id] || 'NPC'}) está reagindo a: "${playerAction}"
-Relação com jogador: ${relation > 0 ? 'positiva (' + relation + ')' : relation < 0 ? 'negativa (' + relation + ')' : 'neutra'}.
-Gere um diálogo curto e imersivo em português.`;
-
-    try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        },
-        body: JSON.stringify({
-          model: this.model,
-          messages: [
-            { role: 'system', content: 'Você é um NPC em um RPG de São Paulo 2026. Fale como seu personagem, nunca quebre a quarta parede.' },
-            { role: 'user', content: prompt }
-          ],
-          max_tokens: 200,
-          temperature: 0.9
-        })
-      });
-
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = await response.json();
-      return data.choices?.[0]?.message?.content || null;
-    } catch (err) {
-      console.error('[AIEngine] Erro no diálogo:', err);
-      return null;
-    }
-  },
-
-  /** Gera headline de notícia */
-  async generateNews(event) {
-    if (!this.enabled) return null;
-    try {
-      const response = await fetch(`${this.baseUrl}/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.apiKey}`
-        },
-        body: JSON.stringify({
-          model: this.model,
-          messages: [
-            { role: 'system', content: 'Você é um jornalista de São Paulo em 2026. Gere apenas o título da manchete, sem explicações.' },
-            { role: 'user', content: `Gere uma manchete de jornal sobre: ${event}` }
-          ],
-          max_tokens: 80,
-          temperature: 0.7
-        })
-      });
-      if (!response.ok) return null;
-      const data = await response.json();
-      return data.choices?.[0]?.message?.content?.trim() || null;
-    } catch { return null; }
   },
 
   /** Verifica se a API está funcionando */

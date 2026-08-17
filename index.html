@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="pt-BR" data-scenario="saopaulo" data-theme="saopaulo">
+<html lang="pt-BR" data-theme="neotokyo">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#0a0a0f" />
-  <title>Chronicles 2026 — RPG Sandbox</title>
+  <title>Chronicles 2026 — Sandbox Global</title>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="css/animations.css" />
 
   <style>
-    /* Leaflet custom overrides */
+    /* Leaflet custom */
     .leaflet-container { background: #0a0a0f !important; }
     .leaflet-control-zoom a { background: rgba(10,10,15,0.85) !important; color: var(--accent) !important; border-color: var(--border-glass) !important; }
     .leaflet-control-attribution { background: rgba(10,10,15,0.7) !important; color: var(--text-muted) !important; font-size: 9px !important; }
@@ -65,43 +65,6 @@
       animation: pulse 1.5s infinite;
     }
 
-    /* Fog overlay */
-    .fog-cell {
-      opacity: 0.85;
-      pointer-events: none;
-    }
-
-    /* Faction zones */
-    .faction-zone {
-      opacity: 0.15;
-      pointer-events: auto;
-      cursor: pointer;
-    }
-
-    /* Route polyline */
-    .route-line {
-      stroke-dasharray: 10, 6;
-      animation: dashMove 1s linear infinite;
-    }
-    @keyframes dashMove {
-      to { stroke-dashoffset: -16; }
-    }
-
-    /* Leaflet popup custom */
-    .leaflet-popup-content-wrapper {
-      background: rgba(10,10,20,0.95) !important;
-      color: var(--text-primary) !important;
-      border: 1px solid var(--border-glass) !important;
-      border-radius: 8px !important;
-      backdrop-filter: blur(12px);
-    }
-    .leaflet-popup-tip { background: rgba(10,10,20,0.95) !important; }
-    .leaflet-popup-content { font-family: var(--font-ui) !important; font-size: 13px !important; margin: 8px 12px !important; }
-    .popup-title { font-family: var(--font-title); font-weight: 600; font-size: 14px; margin-bottom: 4px; }
-    .popup-desc { color: var(--text-secondary); font-size: 12px; }
-    .popup-btn { display: inline-block; margin-top: 6px; padding: 3px 10px; border: 1px solid var(--accent); border-radius: 4px; color: var(--accent); font-size: 11px; cursor: pointer; background: transparent; font-family: var(--font-ui); }
-    .popup-btn:hover { background: rgba(0,255,255,0.1); }
-
     /* Map section in sidebar */
     #map-panel { height: 260px; }
     #map-panel .leaflet-container { height: 100%; width: 100%; }
@@ -123,6 +86,109 @@
       backdrop-filter: blur(12px);
     }
     .full-map-header h3 { font-family: var(--font-title); font-size: 1rem; }
+    .leaflet-popup-content-wrapper {
+      background: rgba(10,10,20,0.95) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border-glass) !important;
+      border-radius: 8px !important;
+      backdrop-filter: blur(12px);
+    }
+    .leaflet-popup-tip { background: rgba(10,10,20,0.95) !important; }
+    .leaflet-popup-content { font-family: var(--font-ui) !important; font-size: 13px !important; margin: 8px 12px !important; }
+    .popup-title { font-family: var(--font-title); font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+    .popup-desc { color: var(--text-secondary); font-size: 12px; }
+    .popup-btn { display: inline-block; margin-top: 6px; padding: 3px 10px; border: 1px solid var(--accent); border-radius: 4px; color: var(--accent); font-size: 11px; cursor: pointer; background: transparent; font-family: var(--font-ui); }
+
+    /* Country picker grid */
+    .country-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 0.5rem;
+      padding: 0.5rem 0;
+    }
+    .country-card {
+      display: flex; align-items: center; gap: 0.5rem;
+      padding: 0.6rem;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-glass);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .country-card:hover {
+      border-color: var(--accent);
+      background: rgba(0,255,255,0.05);
+      transform: translateY(-1px);
+    }
+    .country-flag { font-size: 1.5rem; flex-shrink: 0; }
+    .country-info { min-width: 0; }
+    .country-name { font-size: 0.8rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .country-leader { font-size: 0.65rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .country-title { font-size: 0.6rem; color: var(--text-muted); }
+
+    .continent-section { margin-bottom: 1rem; }
+    .continent-section h3 {
+      font-size: 0.85rem; font-family: var(--font-title);
+      color: var(--accent); margin: 0.75rem 0 0.5rem;
+      padding-bottom: 0.25rem;
+      border-bottom: 1px solid var(--border-glass);
+    }
+    .continent-section h3:first-child { margin-top: 0; }
+
+    /* Era creator suggestions */
+    .suggestion-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .suggestion-chip {
+      padding: 0.4rem 0.75rem;
+      background: var(--bg-glass);
+      border: 1px solid var(--border-glass);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 150ms ease;
+    }
+    .suggestion-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* Constraint display in game */
+    .constraint-bar {
+      display: flex; gap: 0.25rem; align-items: center;
+      padding: 0.25rem 0.5rem;
+      background: var(--bg-glass);
+      border-radius: 6px;
+      font-size: 0.7rem;
+    }
+    .constraint-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--text-muted);
+    }
+    .constraint-dot.active { background: var(--accent); }
+    .constraint-dot.active.hard { background: #e53935; }
+
+    /* Audacity display */
+    .audacity-indicator {
+      display: flex; align-items: center; gap: 0.5rem;
+      font-size: 0.75rem; color: var(--text-muted);
+    }
+    .audacity-bar {
+      width: 60px; height: 4px;
+      background: var(--bg-glass);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .audacity-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00e676, #ffb300, #e53935);
+      transition: width 300ms ease;
+    }
+
+    /* Scenario theme overrides */
+    [data-theme="brazil"] { --accent: #00e676; --accent2: #ffb300; }
+    [data-theme="usa"] { --accent: #448aff; --accent2: #e53935; }
+    [data-theme="china"] { --accent: #ff6f00; --accent2: #ffd600; }
+    [data-theme="russia"] { --accent: #7c4dff; --accent2: #448aff; }
+    [data-theme="argentina"] { --accent: #42a5f5; --accent2: #ffd600; }
+    [data-theme="default"] { --accent: #00ffff; --accent2: #ff00ff; }
   </style>
 </head>
 <body>
@@ -132,14 +198,14 @@
      ============================================ -->
 <div id="screen-title" class="screen active">
   <div class="title-container">
-    <h1>CHRONICLES 2026</h1>
-    <p class="subtitle">RPG Sandbox &mdash; Seu mundo, suas escolhas</p>
+    <h1>CHRONICLES</h1>
+    <p class="subtitle">Sandbox Global — Sua história, suas escolhas</p>
     <div class="title-buttons">
-      <button class="btn btn-accent" onclick="App.showScreen('scenarios')">
-        <i class="fa-solid fa-play"></i> &nbsp;Jogar
+      <button class="btn btn-accent" onclick="App.showEraCreator()">
+        <i class="fa-solid fa-wand-magic-sparkles"></i> &nbsp;Criar Nova Era
       </button>
-      <button class="btn" onclick="App.showScreen('scenarios'); StoryCreator.open()">
-        <i class="fa-solid fa-wand-magic-sparkles"></i> &nbsp;Criador de Mundos
+      <button class="btn" onclick="App.showCountryPicker()">
+        <i class="fa-solid fa-earth-americas"></i> &nbsp;Mundo 2026
       </button>
       <button class="btn" onclick="App.showTutorial()">
         <i class="fa-solid fa-book-open"></i> &nbsp;Como Jogar
@@ -150,22 +216,64 @@
       <button class="btn" onclick="App.showSettings()">
         <i class="fa-solid fa-gear"></i> &nbsp;Configurações
       </button>
+      <button class="btn" onclick="App.showSaveSlots()">
+        <i class="fa-solid fa-floppy-disk"></i> &nbsp;Salvar/Carregar
+      </button>
     </div>
   </div>
 </div>
 
 <!-- ============================================
-     TELA: SELEÇÃO DE CENÁRIOS
+     TELA: CRIADOR DE ERA (IA)
      ============================================ -->
-<div id="screen-scenarios" class="screen">
+<div id="screen-era-creator" class="screen">
   <div class="scenarios-header">
-    <h2><i class="fa-solid fa-globe"></i> &nbsp;Escolha seu Cenário</h2>
+    <h2><i class="fa-solid fa-wand-magic-sparkles"></i> &nbsp;Criar Nova Era</h2>
     <button class="btn-back" onclick="App.showScreen('title')">
       <i class="fa-solid fa-arrow-left"></i> Voltar
     </button>
   </div>
-  <div class="scenarios-grid" id="scenarios-grid">
-    <!-- Cards gerados via JS -->
+  <div style="flex:1;display:flex;flex-direction:column;padding:1rem;overflow-y:auto;">
+    <p style="color:var(--text-secondary);margin-bottom:1rem;text-align:center;">
+      Digite qualquer combinação de país/ano/era e a IA criará o cenário completo
+    </p>
+    <div class="form-group">
+      <label>Comando da Era</label>
+      <input type="text" id="era-command" placeholder="Ex: EUA 1986, Brasil 1964, URSS 1991..."
+             style="width:100%;padding:1rem;background:var(--bg-glass);border:1px solid var(--border-glass);border-radius:10px;color:var(--text-primary);font-size:1.1rem;font-family:var(--font-terminal);">
+    </div>
+    <button class="btn btn-accent" onclick="App.createEra()" style="margin:1rem 0;min-height:50px;font-size:1.1rem;">
+      <i class="fa-solid fa-sparkles"></i> &nbsp;Gerar Cenário com IA
+    </button>
+
+    <div style="margin-top:1rem;">
+      <p style="color:var(--text-muted);font-size:0.8rem;text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.75rem;">Sugestões rápidas:</p>
+      <div class="suggestion-chips" id="era-suggestions">
+        <span class="suggestion-chip" onclick="App.setEraSuggestion('EUA 1986')">🇺🇸 EUA 1986</span>
+        <span class="suggestion-chip" onclick="App.setEraSuggestion('Brasil 1964')">🇧🇷 Brasil 1964</span>
+        <span class="suggestion-chip" onclick="App.setEraSuggestion('URSS 1991')">🇷🇺 URSS 1991</span>
+        <span class="suggestion-chip" onclick="App.setEraSuggestion('China 1949')">🇨🇳 China 1949</span>
+        <span class="suggestion-chip" onclick="App.setEraSuggestion('França 1789')">🇫🇷 França 1789</span>
+        <span class="suggestion-chip" onclick="App.setEraSuggestion('Alemanha 1939')">🇩🇪 Alemanha 1939</span>
+        <span class="suggestion-chip" onclick="App.setEraSuggestion('Japão 1945')">🇯🇵 Japão 1945</span>
+        <span class="suggestion-chip" onclick="App.setEraSuggestion('Brasil 2026')">🇧🇷 Brasil 2026</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================
+     TELA: PICKER DE PAÍSES
+     ============================================ -->
+<div id="screen-country-picker" class="screen">
+  <div class="scenarios-header">
+    <h2><i class="fa-solid fa-earth-americas"></i> &nbsp;Escolha sua Nação</h2>
+    <button class="btn-back" onclick="App.showScreen('title')">
+      <i class="fa-solid fa-arrow-left"></i> Voltar
+    </button>
+  </div>
+  <div id="country-picker-list" style="flex:1;overflow-y:auto;padding:1rem;">
+    <!-- Países gerados via JS -->
   </div>
 </div>
 
@@ -178,9 +286,9 @@
     <div class="wizard-progress">
       <div class="wizard-step-dot active" data-step="1"></div>
       <div class="wizard-step-dot" data-step="2"></div>
-      <div class="wizard-step-dot" data-step="3"></div>
+      <div class="wizard-step-dot" data-step="3" style="display:none"></div>
     </div>
-    <button class="btn-back" onclick="App.showScreen('scenarios')">
+    <button class="btn-back" onclick="App.showScreen('title')">
       <i class="fa-solid fa-times"></i>
     </button>
   </div>
@@ -189,7 +297,7 @@
   <div class="wizard-body" id="wizard-step1">
     <div class="wizard-panel">
       <h2>Quem você é?</h2>
-      <p class="step-desc">Defina seu personagem para 2026. Suas escolhas moldam como o mundo reage a você.</p>
+      <p class="step-desc">Defina seu personagem. Suas escolhas moldam como o mundo reage a você.</p>
 
       <div class="form-group">
         <label>Nome</label>
@@ -197,17 +305,17 @@
       </div>
 
       <div class="form-group">
-        <label>Profissão / Origem em 2026</label>
+        <label>Profissão / Origem</label>
         <select id="char-profession">
+          <option value="leader">Líder Político</option>
           <option value="reporter">Repórter Investigativo</option>
           <option value="hacker">Hacker / Anonym</option>
-          <option value="influencer">Influencer Digital</option>
           <option value="soldier">Ex-Militar</option>
           <option value="doctor">Médico(a)</option>
-          <option value="entrepreneur">Empreendedor(a) Tech</option>
-          <option value="journalist">Jornalista</option>
+          <option value="entrepreneur">Empreendedor(a)</option>
           <option value="activist">Ativista Social</option>
           <option value="detective">Detetive Particular</option>
+          <option value="diplomat">Diplomata</option>
           <option value="street">Morador de Rua</option>
         </select>
       </div>
@@ -226,58 +334,56 @@
     </div>
   </div>
 
-  <!-- Passo 2: Mundo -->
+  <!-- Passo 2: Mundo / Dificuldade -->
   <div class="wizard-body" id="wizard-step2" style="display:none">
     <div class="wizard-panel">
-      <h2>Tom da História</h2>
-      <p class="step-desc">Como o mundo reage às suas ações? Escolha o tom叙事.</p>
+      <h2>Definir o Mundo</h2>
+      <p class="step-desc">Escolha o nível de realismo e consequências. Isso afeta todas as suas ações.</p>
 
       <div class="form-group">
-        <label>Tom叙事</label>
-        <div class="tone-selector">
-          <div class="tone-btn" data-tone="sombrio" onclick="Wizard.selectTone(this)">
-            <h4>🌑 Sombrio</h4>
-            <p>Decisões difíceis, consequências severas</p>
+        <label>Nível de Restrições</label>
+        <div class="constraint-selector" style="display:flex;flex-direction:column;gap:0.5rem;margin-top:0.5rem;">
+          <div class="constraint-card" onclick="Wizard.selectConstraint(this, 'arcade')" data-constraint="arcade">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span><i class="fa-solid fa-gamepad" style="color:#00e676;margin-right:0.5rem;"></i> Arcade</span>
+              <span style="font-size:0.7rem;color:var(--text-muted);">70% sucesso, consequências leves</span>
+            </div>
+            <p style="font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">Mundo maleável — ideal para experimentar ideias loucas</p>
           </div>
-          <div class="tone-btn selected" data-tone="neutro" onclick="Wizard.selectTone(this)">
-            <h4>⚖️ Neutro</h4>
-            <p>Equilíbrio entre luz e sombra</p>
+          <div class="constraint-card selected" onclick="Wizard.selectConstraint(this, 'normal')" data-constraint="normal">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span><i class="fa-solid fa-balance-scale" style="color:#ffb300;margin-right:0.5rem;"></i> Normal</span>
+              <span style="font-size:0.7rem;color:var(--text-muted);">50% sucesso, consequências moderadas</span>
+            </div>
+            <p style="font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">Equilibrado — o mundo reage de forma realista</p>
           </div>
-          <div class="tone-btn" data-tone="heroico" onclick="Wizard.selectTone(this)">
-            <h4>🌟 Heroico</h4>
-            <p>Oportunidades, aliados, esperança</p>
+          <div class="constraint-card" onclick="Wizard.selectConstraint(this, 'hardcore')" data-constraint="hardcore">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <span><i class="fa-solid fa-skull" style="color:#e53935;margin-right:0.5rem;"></i> Hardcore</span>
+              <span style="font-size:0.7rem;color:var(--text-muted);">25% sucesso, consequências severas</span>
+            </div>
+            <p style="font-size:0.7rem;color:var(--text-muted);margin-top:0.25rem;">Realismo máximo — cada decisão importa</p>
           </div>
         </div>
       </div>
 
       <div class="form-group">
-        <label>Dificuldade</label>
-        <select id="game-difficulty">
-          <option value="easy">Fácil — O mundo ajuda quando pode</option>
-          <option value="normal" selected>Normal — Mundo equilibrado</option>
-          <option value="hard">Difícil — O mundo pushes back</option>
-        </select>
-      </div>
-
-      <div class="form-group">
-        <label>Realismo</label>
-        <select id="game-realism">
-          <option value="arcade">Arcade — Consequências simplificadas</option>
-          <option value="immersive" selected>Imersivo — Mundo detalhado</option>
+        <label>Tom da Narrativa</label>
+        <select id="game-tone">
+          <option value="neutro">⚖️ Neutro — Equilíbrio entre luz e sombra</option>
+          <option value="sombrio">🌑 Sombrio — Decisões difíceis, consequências severas</option>
+          <option value="heroico">🌟 Heroico — Oportunidades, aliados, esperança</option>
         </select>
       </div>
     </div>
   </div>
 
-  <!-- Passo 3: Mapa -->
+  <!-- Passo 3: Confirmar (só para modo país) -->
   <div class="wizard-body" id="wizard-step3" style="display:none">
-    <div class="wizard-panel" style="max-width: 700px; display: flex; flex-direction: column; gap: 1rem;">
-      <h2>Escolha seu Ponto de Partida</h2>
-      <p class="step-desc">Clique no mapa para definir onde sua história começa em São Paulo 2026.</p>
-      <div id="wizard-map" style="height: 320px; border-radius: 12px; border: 1px solid var(--border-glass); overflow: hidden;"></div>
-      <p id="wizard-map-info" style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-terminal);">
-        Clique no mapa para selecionar seu início
-      </p>
+    <div class="wizard-panel" style="text-align:center;">
+      <h2>Confirmar Personagem</h2>
+      <div id="wizard-summary" style="text-align:left;padding:1rem;background:var(--bg-glass);border-radius:12px;margin:1rem 0;"></div>
+      <p style="color:var(--text-muted);font-size:0.8rem;">Pronto para começar sua história?</p>
     </div>
   </div>
 
@@ -300,8 +406,17 @@
     <div class="char-avatar-section">
       <div class="char-avatar" id="char-avatar-display">🎭</div>
       <div class="char-name" id="char-name-display">Nome</div>
-      <div class="char-profession" id="char-profession-display">Profissão</div>
+      <div class="char-profession" id="char-profession-display">Líder</div>
       <div class="char-location" id="char-location-display">📍 Local desconhecido</div>
+      <div class="constraint-bar" id="constraint-display">
+        <span>Trava:</span>
+        <div id="constraint-dots">
+          <div class="constraint-dot active" data-level="1"></div>
+          <div class="constraint-dot" data-level="2"></div>
+          <div class="constraint-dot" data-level="3"></div>
+        </div>
+        <span id="constraint-label">Normal</span>
+      </div>
     </div>
 
     <div class="char-stats">
@@ -318,7 +433,25 @@
         <div class="stat-bar"><div class="stat-bar-fill rep" id="stat-rep-bar" style="width:50%"></div></div>
       </div>
       <div class="stat-row">
-        <div class="stat-label"><span>Créditos R$</span><span id="stat-credits-val">500</span></div>
+        <div class="stat-label"><span>Créditos</span><span id="stat-credits-val">500</span></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label"><span>Influência</span><span id="stat-influence-val">10</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill rep" id="stat-influence-bar" style="width:10%"></div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label"><span>Recursos</span><span id="stat-resources-val">500</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill energy" id="stat-resources-bar" style="width:50%"></div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label"><span>Moral</span><span id="stat-morale-val">50</span></div>
+        <div class="stat-bar"><div class="stat-bar-fill hp" id="stat-morale-bar" style="width:50%"></div></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label"><span>Rede</span><span id="stat-network-val">20</span></div>
+      </div>
+      <div class="stat-row">
+        <div class="stat-label"><span>Legitimidade</span><span id="stat-legitimacy-val">30</span></div>
       </div>
     </div>
 
@@ -353,7 +486,7 @@
       </div>
       <div class="narrative-choices" id="narrative-choices"></div>
       <div class="free-input-area">
-        <input type="text" id="free-input" placeholder="Descreva sua ação..." autocomplete="off" />
+        <input type="text" id="free-input" placeholder="Descreva sua ação... (ex: 'declarar guerra', 'negociar paz', 'investir em educação')" autocomplete="off" />
         <button onclick="Engine.submitFreeInput()"><i class="fa-solid fa-paper-plane"></i></button>
       </div>
     </div>
@@ -363,7 +496,7 @@
   <div class="panel-map" id="panel-map">
     <!-- Mini-mapa -->
     <div class="map-section" id="map-panel">
-      <h4><i class="fa-solid fa-map"></i> Mapa &mdash; <span id="map-location-label">São Paulo</span></h4>
+      <h4><i class="fa-solid fa-map"></i> Mapa &mdash; <span id="map-location-label">Mundo</span></h4>
       <div id="map-container"></div>
     </div>
 
@@ -376,12 +509,16 @@
     <!-- Missões -->
     <div class="map-section">
       <h4><i class="fa-solid fa-flag"></i> Missões</h4>
-      <div class="missions-list" id="missions-list"></div>
+      <div class="missions-list" id="missions-list">
+        <p style="font-size:0.75rem;color:var(--text-muted);text-align:center;padding:0.5rem;">
+          As missões surgem conforme você age no mundo.
+        </p>
+      </div>
     </div>
 
     <!-- Notícias -->
     <div class="map-section" style="flex:1; display:flex; flex-direction:column; overflow:hidden;">
-      <h4><i class="fa-solid fa-newspaper"></i> Notícias 2026</h4>
+      <h4><i class="fa-solid fa-newspaper"></i> Notícias do Mundo</h4>
       <div class="news-feed" id="news-feed"></div>
     </div>
 
@@ -408,53 +545,11 @@
 </div>
 
 <!-- ============================================
-     MODAL: COMBATE / DESAFIO
-     ============================================ -->
-<div id="combat-modal">
-  <div class="combat-container">
-    <h2 id="combat-title">Confronto!</h2>
-    <p class="combat-difficulty" id="combat-difficulty">Dificuldade: ★★★☆☆</p>
-    <p id="combat-description" style="color: var(--text-secondary); margin-bottom: 1rem; font-size: 0.9rem;"></p>
-
-    <div class="dice-container" id="dice-container" style="display:none;">
-      <div class="dice" id="dice">
-        <div class="dice-face" id="dice-face">?</div>
-      </div>
-      <p style="font-size: 0.8rem; color: var(--text-muted);" id="dice-result-text"></p>
-    </div>
-
-    <div class="combat-approaches" id="combat-approaches">
-      <button class="approach-btn" data-approach="forca" onclick="Combat.selectApproach(this)">
-        <i class="fa-solid fa-fist-raised"></i> Força
-      </button>
-      <button class="approach-btn" data-approach="inteligencia" onclick="Combat.selectApproach(this)">
-        <i class="fa-solid fa-brain"></i> Inteligência
-      </button>
-      <button class="approach-btn" data-approach="carisma" onclick="Combat.selectApproach(this)">
-        <i class="fa-solid fa-handshake"></i> Carisma
-      </button>
-      <button class="approach-btn" data-approach="furtividade" onclick="Combat.selectApproach(this)">
-        <i class="fa-solid fa-user-secret"></i> Furtividade
-      </button>
-      <button class="approach-btn" data-approach="tecnologia" onclick="Combat.selectApproach(this)">
-        <i class="fa-solid fa-microchip"></i> Tecnologia
-      </button>
-    </div>
-
-    <button class="btn-next" id="combat-submit" onclick="Combat.resolve()" style="display:none; margin: 1rem auto;">
-      Resolver Confronto
-    </button>
-
-    <div class="combat-result" id="combat-result"></div>
-  </div>
-</div>
-
-<!-- ============================================
      MODAL: MAPA EXPANDIDO
      ============================================ -->
 <div id="full-map-modal">
   <div class="full-map-header">
-    <h3><i class="fa-solid fa-map"></i> Mapa de São Paulo 2026</h3>
+    <h3><i class="fa-solid fa-map"></i> Mapa Mundial</h3>
     <button class="btn-back" onclick="MapSystem.collapseMap()">
       <i class="fa-solid fa-compress"></i> Fechar
     </button>
@@ -465,17 +560,24 @@
 <!-- ============================================
      MODAL: TUTORIAL
      ============================================ -->
-<div id="tutorial-modal">
-  <div class="tutorial-container">
-    <div class="tutorial-dots" id="tutorial-dots"></div>
-    <div id="tutorial-steps"></div>
-    <div class="tutorial-buttons">
-      <button class="btn-back" id="tutorial-prev" onclick="Tutorial.prev()">
-        <i class="fa-solid fa-arrow-left"></i> Anterior
+<div id="tutorial-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;">
+  <div style="width:90%;max-width:500px;max-height:80vh;overflow-y:auto;background:var(--bg-panel);border:1px solid var(--border-glass);border-radius:16px;padding:2rem;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
+      <h2 style="font-family:var(--font-title);"><i class="fa-solid fa-book-open"></i> Como Jogar</h2>
+      <button class="btn-back" onclick="document.getElementById('tutorial-modal').style.display='none'">
+        <i class="fa-solid fa-times"></i>
       </button>
-      <button class="btn-next" id="tutorial-next" onclick="Tutorial.next()">
-        Próximo <i class="fa-solid fa-arrow-right"></i>
-      </button>
+    </div>
+    <div style="font-family:var(--font-narration);line-height:1.8;color:var(--text-secondary);">
+      <p><strong style="color:var(--accent);">Chronicles 2026</strong> é um RPG sandbox global. Você pode ser <strong style="color:var(--text-primary);">qualquer líder de qualquer país</strong> e reshaped a história.</p>
+      <p>• <strong>Criar Nova Era:</strong> Digite "EUA 1986" ou "Brasil 1964" e a IA cria o cenário</p>
+      <p>• <strong>Mundo 2026:</strong> Escolha entre 50+ países com líderes reais de janeiro/2026</p>
+      <p>• <strong>3 Níveis de Restrição:</strong> Arcade (fácil), Normal (equilibrado), Hardcore (realismo máximo)</p>
+      <p>• <strong>Ousadia:</strong> Cada ação tem um nível de ousadia (0-10). Quanto mais radical, mais difícil</p>
+      <p>• <strong>Ações livres:</strong> Digite qualquer coisa — "declarar guerra", "negociar paz", "matar o presidente"</p>
+      <p>• <strong>Consequências:</strong> A IA gera resultados realistas baseados no nível de restrição</p>
+      <p>• <strong>Mapa:</strong> Viaje entre países, encontre NPCs, descubra eventos</p>
+      <p>• <strong>Save:</strong> 3 slots de save para continuar depois</p>
     </div>
   </div>
 </div>
@@ -496,17 +598,17 @@
 </div>
 
 <!-- ============================================
-     MODAL: CRIADOR DE MUNDOS
+     MODAL: SLOTS DE SAVE
      ============================================ -->
-<div id="creator-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;">
-  <div style="width:95%;max-width:900px;max-height:90vh;overflow-y:auto;background:var(--bg-panel);border:1px solid var(--border-glass);border-radius:16px;padding:2rem;">
+<div id="save-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.9);backdrop-filter:blur(8px);z-index:1000;display:none;align-items:center;justify-content:center;">
+  <div style="width:90%;max-width:500px;background:var(--bg-panel);border:1px solid var(--border-glass);border-radius:16px;padding:2rem;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;">
-      <h2 style="font-family:var(--font-title);"><i class="fa-solid fa-wand-magic-sparkles"></i> Criador de Mundos</h2>
-      <button class="btn-back" onclick="StoryCreator.close()">
+      <h2 style="font-family:var(--font-title);"><i class="fa-solid fa-floppy-disk"></i> Salvar/Carregar</h2>
+      <button class="btn-back" onclick="document.getElementById('save-modal').style.display='none'">
         <i class="fa-solid fa-times"></i>
       </button>
     </div>
-    <div id="creator-content"></div>
+    <div id="save-slots-list"></div>
   </div>
 </div>
 
@@ -524,10 +626,10 @@
 <script src="js/npc-system.js"></script>
 <script src="js/map-system.js"></script>
 <script src="js/ai-engine.js"></script>
+<script src="js/global-scenarios.js"></script>
+<script src="js/era-creator.js"></script>
 <script src="js/engine.js"></script>
 <script src="js/ui.js"></script>
-<script src="js/combat.js"></script>
-<script src="js/creator-mode.js"></script>
 <script src="js/app.js"></script>
 
 </body>

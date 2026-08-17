@@ -30,25 +30,31 @@ const MapSystem = {
     const container = document.getElementById('map-container');
     if (!container) return;
 
+    // Centraliza no mundo ou no país selecionado
+    let center = [20, 0];
+    let zoom = 3;
+
+    const country = Engine.state?.country;
+    if (country?.coords) {
+      center = [country.coords.lat, country.coords.lng];
+      zoom = 5;
+    }
+
     this.map = L.map('map-container', {
-      center: [-23.55, -46.63],
-      zoom: 13,
+      center: center,
+      zoom: zoom,
       zoomControl: true,
       attributionControl: true,
       layersControl: false
     });
 
-    // Tiles escuros (CartoDB Dark Matter)
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '© <a href="https://www.openstreetmap.org/copyright">OSM</a> © <a href="https://carto.com/">CARTO</a>',
       subdomains: 'abcd',
       maxZoom: 19
     }).addTo(this.map);
 
-    // Clique no mapa para investigar/viajar
     this.map.on('click', (e) => this.onMapClick(e));
-
-    // Fog of war inicial (círculo ao redor do jogador)
     this.updateFogOfWar();
   },
 
@@ -56,9 +62,18 @@ const MapSystem = {
   initFullMap() {
     if (this.fullMap) return;
 
+    let center = [20, 0];
+    let zoom = 3;
+
+    const country = Engine.state?.country;
+    if (country?.coords) {
+      center = [country.coords.lat, country.coords.lng];
+      zoom = 5;
+    }
+
     this.fullMap = L.map('full-map-container', {
-      center: [-23.55, -46.63],
-      zoom: 13,
+      center: center,
+      zoom: zoom,
       zoomControl: true
     });
 
@@ -99,12 +114,6 @@ const MapSystem = {
 
     this.updateFogOfWar();
     this.updateMapLocationLabel(locationKey);
-
-    // Animação de rota se houver localização anterior
-    if (this.prevLocation) {
-      this.drawRoute(this.prevLocation, { lat, lng });
-    }
-    this.prevLocation = { lat, lng };
   },
 
   /** Adiciona marcador de NPC no mapa */
@@ -161,7 +170,7 @@ const MapSystem = {
 
     const marker = L.marker([loc.lat, loc.lng], { icon })
       .addTo(this.map)
-      .bindPopup(`<div class="popup-title">${loc.name}</div><div class="popup-desc">${loc.desc.replace('{{player}}', Engine.state.playerName || 'você')}</div>`);
+      .bindPopup(`<div class="popup-title">${loc.name}</div><div class="popup-desc">${loc.desc}</div>`);
 
     this.markers['loc_' + locKey] = marker;
   },
@@ -181,7 +190,6 @@ const MapSystem = {
     const id = 'event_' + Date.now();
     this.markers[id] = marker;
 
-    // Remove após 5 turnos
     setTimeout(() => this.removeMarker(id), 30000);
   },
 
@@ -193,16 +201,14 @@ const MapSystem = {
     ).addTo(this.map);
 
     this.routes.push(line);
-    // Limita número de rotas visíveis
     if (this.routes.length > 10) {
       const old = this.routes.shift();
       this.map.removeLayer(old);
     }
   },
 
-  /** Atualiza Fog of War com áreas descobertas persistentes */
+  /** Atualiza Fog of War */
   updateFogOfWar() {
-    // Remove fogos anteriores
     this.fogCircles.forEach(c => this.map.removeLayer(c));
     this.fogCircles = [];
 
@@ -211,8 +217,7 @@ const MapSystem = {
     const loc = LOCATIONS[this.currentLocation];
     if (!loc) return;
 
-    // Círculo de visão revelada (raio maior)
-    const revealRadius = 0.015; // ~1.7km
+    const revealRadius = 0.015;
     const revealCircle = L.circle([loc.lat, loc.lng], {
       radius: revealRadius * 111000,
       color: '#00ffff',
@@ -223,16 +228,6 @@ const MapSystem = {
     }).addTo(this.map);
     this.fogCircles.push(revealCircle);
 
-    // Revelar locais próximos automaticamente
-    for (const [key, l] of Object.entries(LOCATIONS)) {
-      const dist = Math.sqrt(Math.pow(loc.lat - l.lat, 2) + Math.pow(loc.lng - l.lng, 2));
-      if (dist < revealRadius * 1.5 && !this.revealedAreas.includes(key)) {
-        this.revealedAreas.push(key);
-        this.addLocationMarker(key);
-      }
-    }
-
-    // Círculos de "fog" (escuridão) ao redor
     for (let i = 0; i < 8; i++) {
       const angle = (i / 8) * Math.PI * 2;
       const dist = revealRadius * 2 + Math.random() * 0.015;
@@ -251,9 +246,8 @@ const MapSystem = {
 
   /** Clique no mapa */
   onMapClick(e) {
-    if (this.isExpanded) return; // Não interagir quando expandido
+    if (this.isExpanded) return;
 
-    // Verifica se clicou perto de algum landmark
     const clickedLat = e.latlng.lat;
     const clickedLng = e.latlng.lng;
 
@@ -262,8 +256,7 @@ const MapSystem = {
         Math.pow(clickedLat - loc.lat, 2) +
         Math.pow(clickedLng - loc.lng, 2)
       );
-      if (dist < 0.008) {
-        // Verifica se o local está revelado
+      if (dist < 0.05) { // Global scale
         if (this.isLocationRevealed(key)) {
           Engine.travelTo(key);
         } else {
@@ -272,108 +265,17 @@ const MapSystem = {
         return;
       }
     }
-
-    // Clique em área aberta — investigar
-    Engine.investigateAt(clickedLat, clickedLng);
   },
 
   /** Verifica se local foi revelado */
   isLocationRevealed(locKey) {
-    if (!this.currentLocation) return false;
-    const current = LOCATIONS[this.currentLocation];
-    const target = LOCATIONS[locKey];
-    if (!current || !target) return false;
-
-    const dist = Math.sqrt(
-      Math.pow(current.lat - target.lat, 2) +
-      Math.pow(current.lng - target.lng, 2)
-    );
-    return dist < 0.03; // ~3km de alcance
+    return this.revealedAreas.includes(locKey);
   },
 
   /** Interagir com NPC pelo popup */
   interactNPC(npcId) {
     this.closePopups();
     Engine.talkToNPC(npcId);
-  },
-
-  /** Alterna camada do mapa */
-  toggleLayer(layer) {
-    this.activeLayers[layer] = !this.activeLayers[layer];
-
-    // Atualiza visual do botão
-    const btn = document.getElementById('layer-' + layer);
-    if (btn) {
-      btn.style.background = this.activeLayers[layer] ? 'rgba(0,255,255,0.15)' : '';
-      btn.style.borderColor = this.activeLayers[layer] ? 'var(--accent)' : '';
-    }
-
-    // Atualiza visualização no mapa
-    if (layer === 'allegiance') {
-      this.updateAllegianceLayer();
-    } else if (layer === 'danger') {
-      this.updateDangerLayer();
-    } else if (layer === 'entities') {
-      this.refreshAllMarkers();
-    }
-  },
-
-  /** Atualiza camada de facções */
-  updateAllegianceLayer() {
-    // Remove zona anterior
-    this.zoneLayers.forEach(z => this.map.removeLayer(z));
-    this.zoneLayers = [];
-
-    if (!this.activeLayers.allegiance) return;
-
-    // Zonas de facção (simuladas)
-    const factions = [
-      { name: 'Sentinela Corp', color: '#e53935', center: [-23.583, -46.680], radius: 2000 },
-      { name: 'Resistência', color: '#00e676', center: [-23.520, -46.610], radius: 1500 },
-      { name: 'Gareth (Hacker)', color: '#7c4dff', center: [-23.550, -46.633], radius: 1000 }
-    ];
-
-    factions.forEach(f => {
-      const zone = L.circle([f.center[0], f.center[1]], {
-        radius: f.radius,
-        color: f.color,
-        fillColor: f.color,
-        fillOpacity: 0.15,
-        weight: 1,
-        opacity: 0.5
-      }).addTo(this.map);
-      zone.bindPopup(`<div class="popup-title">${f.name}</div><div class="popup-desc">Zona de influência</div>`);
-      this.zoneLayers.push(zone);
-    });
-  },
-
-  /** Atualiza camada de perigo */
-  updateDangerLayer() {
-    this.zoneLayers.forEach(z => this.map.removeLayer(z));
-    this.zoneLayers = [];
-
-    if (!this.activeLayers.danger) return;
-
-    // Áreas de perigo
-    const dangerZones = [
-      { name: 'Torre Altino', center: [-23.583, -46.680], radius: 800, level: 'alto' },
-      { name: 'Morro do Pinheirinho', center: [-23.520, -46.610], radius: 1200, level: 'médio' },
-      { name: 'Lapa (noite)', center: [-23.528, -46.681], radius: 600, level: 'baixo' }
-    ];
-
-    dangerZones.forEach(d => {
-      const color = d.level === 'alto' ? '#e53935' : d.level === 'médio' ? '#ffb300' : '#7c4dff';
-      const zone = L.circle([d.center[0], d.center[1]], {
-        radius: d.radius,
-        color: color,
-        fillColor: color,
-        fillOpacity: 0.2,
-        weight: 1,
-        dashArray: '5,5'
-      }).addTo(this.map);
-      zone.bindPopup(`<div class="popup-title">⚠️ ${d.name}</div><div class="popup-desc">Nível de perigo: ${d.level}</div>`);
-      this.zoneLayers.push(zone);
-    });
   },
 
   /** Fecha popups */
@@ -388,8 +290,6 @@ const MapSystem = {
     this.initFullMap();
     document.getElementById('full-map-modal').classList.add('active');
     setTimeout(() => this.fullMap.invalidateSize(), 100);
-
-    // Repopula marcadores
     this.refreshAllMarkers();
   },
 
@@ -413,13 +313,11 @@ const MapSystem = {
 
   /** Atualiza todos os marcadores */
   refreshAllMarkers() {
-    // Remove marcadores antigos de NPCs
     Object.keys(this.markers).forEach(k => {
       if (k.startsWith('npc_')) this.map.removeLayer(this.markers[k]);
     });
     this.markers = {};
 
-    // Repopula
     NPCSystem.allAlive().forEach(npc => {
       this.addNPCKMarker({
         id: npc.id,
@@ -435,13 +333,9 @@ const MapSystem = {
       });
     });
 
-    // Redesenha rotas de patrulha
     NPCSystem.drawRoutes(this.map);
-
-    // Marcadores de locais revelados
     this.revealedAreas.forEach(loc => this.addLocationMarker(loc));
 
-    // Centro no jogador
     if (this.playerMarker) {
       const pos = this.playerMarker.getLatLng();
       this.map.setView(pos, 14);

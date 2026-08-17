@@ -7,15 +7,14 @@
 
 const App = {
   currentScreen: 'title',
-  currentEra: null, // Era criada via IA
-  isEraMode: false, // true = modo criar era, false = modo escolher país
+  currentEra: null,
+  isEraMode: false,
 
   /** Inicializa o app */
   init() {
     this.renderTraitButtons();
     this.setupKeyboard();
 
-    // Verifica API key salva
     const savedApiConfig = localStorage.getItem('chronicles2026_api');
     if (savedApiConfig) {
       try {
@@ -26,7 +25,6 @@ const App = {
       } catch(e) {}
     }
 
-    // Verifica saves
     this.renderRecentGames();
   },
 
@@ -35,7 +33,6 @@ const App = {
     const slots = Storage.getSlots();
     if (slots.length === 0) return;
 
-    // Mostra botão "Continuar" se houver save ativo
     if (Storage.hasSave()) {
       const info = Storage.getLastSaveInfo();
       if (info) {
@@ -47,7 +44,7 @@ const App = {
           Engine.loadGame();
           this.showScreen('game');
         };
-        document.querySelector('.title-buttons').appendChild(btn);
+        document.querySelector('.title-buttons')?.appendChild(btn);
       }
     }
   },
@@ -85,8 +82,11 @@ const App = {
         if (document.getElementById('full-map-modal')?.classList.contains('active')) {
           MapSystem.collapseMap();
         }
-        if (document.getElementById('tutorial-modal')?.classList.contains('active')) {
+        if (document.getElementById('tutorial-modal').style.display === 'flex') {
           document.getElementById('tutorial-modal').style.display = 'none';
+        }
+        if (document.getElementById('achievements-modal').style.display === 'flex') {
+          document.getElementById('achievements-modal').style.display = 'none';
         }
       }
     });
@@ -96,13 +96,16 @@ const App = {
    * MODO ERA (IA CRIA O CENÁRIO)
    * ============================================= */
 
-  /** Abre tela de criação de era */
   showEraCreator() {
     this.isEraMode = true;
     this.showScreen('era-creator');
   },
 
-  /** Cria era via IA */
+  setEraSuggestion(text) {
+    const input = document.getElementById('era-command');
+    if (input) input.value = text;
+  },
+
   async createEra() {
     const input = document.getElementById('era-command');
     if (!input) return;
@@ -129,7 +132,6 @@ const App = {
    * MODO PAÍS (ESCOLHE NAÇÃO)
    * ============================================= */
 
-  /** Abre picker de países */
   showCountryPicker() {
     this.isEraMode = false;
     this.showScreen('country-picker');
@@ -161,8 +163,14 @@ const App = {
   },
 
   selectCountry(countryId) {
-    const allCountries = Object.values(GLOBAL_COUNTRIES).flat();
-    const country = allCountries.find(c => c.id === countryId);
+    let country = null;
+    for (const continent of Object.values(GLOBAL_COUNTRIES)) {
+      const found = continent.countries.find(c => c.id === countryId);
+      if (found) {
+        country = { ...found, continent: continent.label };
+        break;
+      }
+    }
     if (!country) return;
 
     Wizard.init('country', country);
@@ -174,7 +182,7 @@ const App = {
       'usa': '🇺🇸', 'canada': '🇨🇦', 'mexico': '🇲🇽',
       'brazil': '🇧🇷', 'argentina': '🇦🇷', 'chile': '🇨🇱', 'colombia': '🇨🇴',
       'venezuela': '🇻🇪', 'peru': '🇵🇪', 'ecuador': '🇪🇨', 'bolivia': '🇧🇴',
-      'paraguay': '🇵🇾', 'uruguay': '🇺🇾', 'bolivia': '🇧🇴',
+      'paraguay': '🇵🇾', 'uruguay': '🇺🇾',
       'uk': '🇬🇧', 'france': '🇫🇷', 'germany': '🇩🇪', 'italy': '🇮🇹',
       'spain': '🇪🇸', 'portugal': '🇵🇹', 'netherlands': '🇳🇱', 'belgium': '🇧🇪',
       'switzerland': '🇨🇭', 'austria': '🇦🇹', 'poland': '🇵🇱', 'czech-republic': '🇨🇿',
@@ -200,7 +208,6 @@ const App = {
    * ============================================= */
 
   showSettings() {
-    // ... código existente
     const modal = document.createElement('div');
     modal.id = 'settings-modal';
     modal.style.cssText = `
@@ -237,7 +244,6 @@ const App = {
     `;
     document.body.appendChild(modal);
 
-    // Pré-preenche
     const saved = localStorage.getItem('chronicles2026_api');
     if (saved) {
       try {
@@ -270,16 +276,35 @@ const App = {
   },
 
   showTutorial() {
-    const modal = document.getElementById('tutorial-modal');
-    if (modal) {
-      modal.style.display = 'flex';
-      modal.classList.add('active');
-    }
+    document.getElementById('tutorial-modal').style.display = 'flex';
   },
 
   showAchievements() {
     const modal = document.getElementById('achievements-modal');
-    if (modal) modal.style.display = 'flex';
+    if (!modal) return;
+    modal.style.display = 'flex';
+    this.renderAchievements();
+  },
+
+  renderAchievements() {
+    const grid = document.getElementById('achievements-grid');
+    if (!grid) return;
+
+    const state = Engine.state || {};
+    let html = '';
+    for (const ach of ACHIEVEMENTS) {
+      const unlocked = ach.check(state);
+      html += `
+        <div class="achievement-item ${unlocked ? 'unlocked' : 'locked'}">
+          <div class="achievement-icon">${unlocked ? ach.icon : '🔒'}</div>
+          <div class="achievement-info">
+            <div class="achievement-name">${ach.name}</div>
+            <div class="achievement-desc">${ach.desc}</div>
+          </div>
+        </div>
+      `;
+    }
+    grid.innerHTML = html;
   },
 
   showSaveSlots() {
@@ -352,6 +377,7 @@ const Wizard = {
   scenario: null,
   selectedTraits: [],
   selectedTone: 'neutro',
+  selectedConstraint: 'normal',
   wizardMap: null,
   wizardMarker: null,
   selectedCountry: null,
@@ -362,6 +388,7 @@ const Wizard = {
     this.step = 1;
     this.selectedTraits = [];
     this.selectedTone = 'neutro';
+    this.selectedConstraint = 'normal';
     this.wizardMap = null;
     this.wizardMarker = null;
     this.skipMapStep = false;
@@ -375,10 +402,9 @@ const Wizard = {
       this.skipMapStep = true;
     }
 
-    // Reset visual
     document.querySelectorAll('.wizard-step-dot').forEach((dot, i) => {
       dot.classList.toggle('active', i === 0);
-      dot.classList.toggle('done', false);
+      dot.classList.remove('done');
     });
     document.querySelectorAll('.wizard-body').forEach((body, i) => {
       body.style.display = i === 0 ? 'flex' : 'none';
@@ -386,7 +412,6 @@ const Wizard = {
     document.getElementById('wizard-prev').style.visibility = 'hidden';
     document.getElementById('wizard-next').innerHTML = 'Próximo <i class="fa-solid fa-arrow-right"></i>';
 
-    // Reset form
     const nameInput = document.getElementById('char-name');
     if (nameInput) nameInput.value = '';
     const avatarInput = document.getElementById('char-avatar');
@@ -395,10 +420,7 @@ const Wizard = {
     document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('selected'));
     const defaultTone = document.querySelector('.tone-btn[data-tone="neutro"]');
     if (defaultTone) defaultTone.classList.add('selected');
-    const mapInfo = document.getElementById('wizard-map-info');
-    if (mapInfo) mapInfo.textContent = 'Clique no mapa para selecionar seu início';
 
-    // Ajusta steps
     if (this.skipMapStep) {
       document.querySelectorAll('.wizard-step-dot')[2]?.style.setProperty('display', 'none');
     } else {
@@ -419,15 +441,7 @@ const Wizard = {
       }
     }
 
-    if (this.step === 2) {
-      if (this.skipMapStep) {
-        this.finish();
-        return;
-      }
-      setTimeout(() => this.initWizardMap(), 50);
-    }
-
-    if (this.step === 3 && !this.skipMapStep) {
+    if (this.step === 2 && this.skipMapStep) {
       this.finish();
       return;
     }
@@ -457,13 +471,13 @@ const Wizard = {
     document.getElementById('wizard-prev').style.visibility = this.step > 1 ? 'visible' : 'hidden';
 
     const nextBtn = document.getElementById('wizard-next');
-    if (this.step === (this.skipMapStep ? 2 : 3)) {
+    if (this.step >= (this.skipMapStep ? 2 : 3)) {
       nextBtn.innerHTML = '<i class="fa-solid fa-rocket"></i> Começar Aventura';
     } else {
       nextBtn.innerHTML = 'Próximo <i class="fa-solid fa-arrow-right"></i>';
     }
 
-    const titles = { 1: 'Criar Personagem', 2: 'Definir o Mundo', 3: 'Ponto de Partida' };
+    const titles = { 1: 'Criar Personagem', 2: 'Definir o Mundo', 3: 'Confirmar' };
     document.getElementById('wizard-title').textContent = titles[this.step] || '';
   },
 
@@ -482,55 +496,20 @@ const Wizard = {
     }
   },
 
-  selectTone(btn) {
-    document.querySelectorAll('.tone-btn').forEach(b => b.classList.remove('selected'));
-    btn.classList.add('selected');
-    this.selectedTone = btn.dataset.tone;
-  },
-
-  initWizardMap() {
-    const container = document.getElementById('wizard-map');
-    if (!container) return;
-    if (container.offsetParent === null) return;
-    if (this.wizardMap) return;
-
-    try {
-      const center = this.selectedCountry?.coords || { lat: 20, lng: 0 };
-      this.wizardMap = L.map('wizard-map', {
-        center: [center.lat, center.lng],
-        zoom: 4,
-        zoomControl: true,
-        attributionControl: false
-      });
-
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19
-      }).addTo(this.wizardMap);
-
-      this.wizardMap.on('click', (e) => {
-        if (this.wizardMarker) this.wizardMap.removeLayer(this.wizardMarker);
-        this.wizardMarker = L.marker([e.latlng.lat, e.latlng.lng], {
-          icon: L.divIcon({ className: 'marker-player', iconSize: [20, 20], iconAnchor: [10, 10] })
-        }).addTo(this.wizardMap);
-        const mapInfo = document.getElementById('wizard-map-info');
-        if (mapInfo) mapInfo.textContent = `Ponto selecionado: ${e.latlng.lat.toFixed(2)}, ${e.latlng.lng.toFixed(2)}`;
-      });
-
-      setTimeout(() => this.wizardMap.invalidateSize(), 200);
-    } catch (err) {
-      console.error('Erro ao inicializar mapa:', err);
-    }
+  selectConstraint(card, constraint) {
+    document.querySelectorAll('.constraint-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    this.selectedConstraint = constraint;
   },
 
   finish() {
     const state = {
       playerName: document.getElementById('char-name')?.value.trim() || 'Viajante',
-      profession: document.getElementById('char-profession')?.value || 'líder',
+      profession: document.getElementById('char-profession')?.value || 'leader',
       avatar: document.getElementById('char-avatar')?.value || '🎭',
       traits: this.selectedTraits,
-      tone: this.selectedTone,
-      difficulty: document.getElementById('game-difficulty')?.value || 'normal',
-      realism: document.getElementById('game-realism')?.value || 'immersive',
+      tone: document.getElementById('game-tone')?.value || 'neutro',
+      difficulty: this.selectedConstraint,
       currentLocation: this.selectedCountry?.id || 'world',
       scenario: this.selectedEra?.name || (this.selectedCountry?.name || 'Mundo')
     };
@@ -544,6 +523,8 @@ const Wizard = {
     if (this.selectedEra) {
       state.era = this.selectedEra;
       state.gameDate = this.selectedEra.date || new Date().toISOString().split('T')[0];
+      state.erasCreated = (Engine.state?.erasCreated || 0) + 1;
+      state.erasPlayed = (Engine.state?.erasPlayed || 0) + 1;
     }
 
     Engine.startGame('sandbox', state);
@@ -557,7 +538,6 @@ const Wizard = {
  * INICIALIZAÇÃO
  * ============================================ */
 document.addEventListener('DOMContentLoaded', () => {
-  // Configura IA se API key estiver disponível
   const savedApiConfig = localStorage.getItem('chronicles2026_api');
   if (savedApiConfig) {
     try {
@@ -582,7 +562,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const game = document.getElementById('screen-game');
     if (!game) return;
 
-    if (diff > 0) { // Swipe left
+    if (diff > 0) {
       if (game.classList.contains('show-character')) {
         game.classList.remove('show-character');
         document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
@@ -592,7 +572,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.mobile-tab').forEach(t => t.classList.remove('active'));
         document.querySelector('.mobile-tab[data-tab="scene"]')?.classList.add('active');
       }
-    } else { // Swipe right
+    } else {
       const activeTab = document.querySelector('.mobile-tab.active')?.dataset.tab;
       if (activeTab === 'scene') {
         game.classList.add('show-map');

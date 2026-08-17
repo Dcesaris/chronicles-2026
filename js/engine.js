@@ -57,32 +57,31 @@ const Engine = {
   /** Calcula chance de sucesso baseada nas travas */
   calculateSuccessChance(action, context) {
     const constraint = this.constraints[this.state.difficulty] || this.constraints.normal;
-    
-    // Fatores que afetam chance
+
     let baseChance = constraint.successChance;
-    
+
     // Bônus por influência
     const influenceBonus = (this.state.stats.influence / 100) * 0.2;
     baseChance += influenceBonus;
-    
+
     // Bônus por recursos
     const resourceBonus = (this.state.stats.resources / 1000) * 0.15;
     baseChance += resourceBonus;
-    
+
     // Bônus por traços relevantes
     const relevantTraits = ['corajoso', 'estrategista', 'astuto'];
     const traitBonus = this.state.traits.filter(t => relevantTraits.includes(t)).length * 0.05;
     baseChance += traitBonus;
-    
+
     // Penalidades por ações muito ousadas
     const audacity = this.auditActionAudacity(action);
     const audacityPenalty = audacity * 0.15;
     baseChance -= audacityPenalty;
-    
-    // Penalidade por relações ruins com Alvos
-    const badRelations = Object.values(this.state.npcRelations).filter(r => r < -20).length;
+
+    // Penalidade por relações ruins
+    const badRelations = Object.values(this.state.npcRelations || {}).filter(r => r < -20).length;
     baseChance -= badRelations * 0.1;
-    
+
     // Clamp entre 0.05 e 0.95
     return Math.max(0.05, Math.min(0.95, baseChance));
   },
@@ -91,7 +90,7 @@ const Engine = {
   auditActionAudacity(action) {
     const lower = action.toLowerCase();
     let audacity = 0;
-    
+
     // Ações militares
     if (lower.includes('declarar guerra') || lower.includes('atacar') || lower.includes('invasion')) {
       audacity += 8;
@@ -102,7 +101,7 @@ const Engine = {
     if (lower.includes('golpe') || lower.includes('coup') || lower.includes('derrocar')) {
       audacity += 7;
     }
-    
+
     // Ações diplomáticas
     if (lower.includes('aliança') || lower.includes('tratado') || lower.includes('pacto')) {
       audacity += 3;
@@ -110,7 +109,7 @@ const Engine = {
     if (lower.includes('sanção') || lower.includes('embargo') || lower.includes('bloqueio')) {
       audacity += 5;
     }
-    
+
     // Ações econômicas
     if (lower.includes('confiscar') || lower.includes('nacionalizar') || lower.includes('expropriar')) {
       audacity += 6;
@@ -118,7 +117,7 @@ const Engine = {
     if (lower.includes('crise') || lower.includes('colapso') || lower.includes('depressão')) {
       audacity += 4;
     }
-    
+
     // Ações de informação
     if (lower.includes('mentir') || lower.includes('enganar') || lower.includes('fraude')) {
       audacity += 4;
@@ -126,7 +125,7 @@ const Engine = {
     if (lower.includes('vazar') || lower.includes('denunciar') || lower.includes('expor')) {
       audacity += 3;
     }
-    
+
     return Math.min(10, audacity);
   },
 
@@ -134,15 +133,13 @@ const Engine = {
   applyConsequences(result, audacity) {
     const constraint = this.constraints[this.state.difficulty] || this.constraints.normal;
     const severity = constraint.consequenceSeverity;
-    
+
     if (result.success) {
-      // Sucesso com consequências menores no arcade
       const resourceGain = Math.floor(result.resourceEffect * constraint.resourceMultiplier);
       this.state.stats.resources = Math.max(0, this.state.stats.resources + resourceGain);
       this.state.stats.influence = Math.min(100, this.state.stats.influence + result.influenceEffect);
       this.state.stats.morale = Math.min(100, this.state.stats.morale + result.moraleEffect);
     } else {
-      // Fracasso com consequências severas no hardcore
       const penalty = severity * 2;
       this.state.stats.resources = Math.max(0, this.state.stats.resources - Math.floor(audacity * penalty));
       this.state.stats.influence = Math.max(0, this.state.stats.influence - Math.floor(audacity * penalty * 0.5));
@@ -156,7 +153,7 @@ const Engine = {
     return {
       scenario: null,
       playerName: 'Viajante',
-      profession: 'reporter',
+      profession: 'leader',
       avatar: '🎭',
       traits: [],
       tone: 'neutro',
@@ -164,6 +161,7 @@ const Engine = {
       realism: 'immersive',
       country: null,
       playerTitle: null,
+      era: null,
 
       stats: {
         hp: 100, maxHp: 100,
@@ -176,15 +174,26 @@ const Engine = {
         legitimacy: 30
       },
       credits: 500,
-      currentLocation: 'pinheiros',
-      visitedLocations: ['pinheiros'],
-      revealedLocations: ['pinheiros'],
+      currentLocation: 'world',
+      visitedLocations: ['world'],
+      revealedLocations: ['world'],
       gameDate: '2026-01-01',
       turnNumber: 1,
       activeMissions: [],
       completedMissions: [],
       npcRelations: {},
-      mapLayers: { allegiance: false, danger: false, entities: true, landmarks: true, events: true }
+      mapLayers: { allegiance: false, danger: false, entities: true, landmarks: true, events: true },
+      visitedLocationsCount: 1,
+      maxNPCRelations: 0,
+      erasCreated: 0,
+      erasPlayed: 0,
+      journalEntries: 0,
+      inventory: [
+        { icon: '📱', name: 'Celular' },
+        { icon: '🔑', name: 'Chaves' },
+        { icon: '💳', name: 'Carteira' }
+      ],
+      maxSlots: 10
     };
   },
 
@@ -217,7 +226,7 @@ const Engine = {
     if (!loc) return;
     for (const [key, l] of Object.entries(LOCATIONS)) {
       const d = Math.sqrt(Math.pow(loc.lat - l.lat, 2) + Math.pow(loc.lng - l.lng, 2));
-      if (d < 0.02) {
+      if (d < 0.5) { // Global scale
         if (!this.state.revealedLocations.includes(key)) this.state.revealedLocations.push(key);
         if (!this.state.visitedLocations.includes(key)) this.state.visitedLocations.push(key);
       }
@@ -232,7 +241,8 @@ const Engine = {
 
     const prompt = `Você é um mestre de RPG sandbox mundial ambientado em Janeiro de 2026.
 O jogador é ${this.state.playerName}, ${this.state.profession || 'líder'}, com traços: ${this.state.traits.join(', ') || 'nenhum'}.
-${country ? `É ${country.leader}, ${country.title} de ${country.name}.` : 'Começa em ' + (loc?.name || 'São Paulo') + '.'}
+${country ? `É ${country.leader.name}, ${country.leader.title} de ${country.name}.` : 'Começa em ' + (loc?.name || 'o mundo') + '.'}
+${this.state.era ? `Era criada: ${this.state.era.name} (${this.state.era.year}).` : ''}
 
 Gere UMA abertura imersiva (3-4 parágrafos) que:
 1. Descreva a cena inicial no local
@@ -260,12 +270,13 @@ FORMATO OBRIGATÓRIO (use exatamente):
 
   buildContext() {
     const loc = LOCATIONS[this.state.currentLocation];
+    const country = this.state.country;
     return {
-      location: loc?.name || this.state.currentLocation,
-      locationDesc: loc?.desc || '',
-      country: this.state.country?.name,
-      leader: this.state.country?.leader,
-      title: this.state.country?.title,
+      location: loc?.name || country?.name || this.state.currentLocation,
+      locationDesc: loc?.desc || country?.description || '',
+      country: country?.name,
+      leader: country?.leader?.name,
+      title: country?.leader?.title,
       profession: this.state.profession,
       traits: this.state.traits.join(', '),
       tone: this.state.tone,
@@ -273,12 +284,12 @@ FORMATO OBRIGATÓRIO (use exatamente):
       turn: this.state.turnNumber,
       stats: this.state.stats,
       recentActions: this.history.slice(-5).map(h => h.action.substring(0, 80)),
-      nearbyNPCs: NPCSystem.allAlive().filter(n => NPCSystem.canMeet(n.id, this.state.currentLocation)).map(n => `${n.name}(${n.allegiance})`).join(', ') || 'Nenhum'
+      nearbyNPCs: NPCSystem.allAlive().map(n => `${n.name}(${n.allegiance})`).join(', ') || 'Nenhum',
+      difficulty: this.state.difficulty
     };
   },
 
-  processIAResponse(response, audacity, successChance) {
-    // Tenta extrair seções
+  processIAResponse(response) {
     const narrativeMatch = response.match(/\[NARRATIVA\]([\s\S]*?)\[\/NARRATIVA\]/);
     const consequencesMatch = response.match(/\[CONSEQUENCIAS\]([\s\S]*?)\[\/CONSEQUENCIAS\]/);
     const optionsMatch = response.match(/\[OPCOES\]([\s\S]*?)\[\/OPCOES\]/);
@@ -291,17 +302,16 @@ FORMATO OBRIGATÓRIO (use exatamente):
     let resourceChange = 0;
     let influenceChange = 0;
     let moraleChange = 0;
-    
+
     const resMatch = consequencesText.match(/Recursos:\s*([+-]?\d+)/i);
     if (resMatch) resourceChange = parseInt(resMatch[1]);
-    
+
     const infMatch = consequencesText.match(/Influencia:\s*([+-]?\d+)/i);
     if (infMatch) influenceChange = parseInt(infMatch[1]);
-    
+
     const morMatch = consequencesText.match(/Moral:\s*([+-]?\d+)/i);
     if (morMatch) moraleChange = parseInt(morMatch[1]);
 
-    // Aplica consequências se houver mudança
     if (resourceChange !== 0 || influenceChange !== 0 || moraleChange !== 0) {
       this.state.stats.resources = Math.max(0, Math.min(10000, this.state.stats.resources + resourceChange));
       this.state.stats.influence = Math.max(0, Math.min(100, this.state.stats.influence + influenceChange));
@@ -309,16 +319,7 @@ FORMATO OBRIGATÓRIO (use exatamente):
       UI.updateStats();
     }
 
-    // Adiciona aviso de travas se ação foi muito ousada
-    let narrativeHtml = narrative;
-    if (audacity >= 7) {
-      const warning = audacity >= 9 
-        ? '<p style="color:#e53935;font-size:0.8rem;">⚠️ AÇÃO EXTREMAMENTE OUSADA — Consequências severas aplicadas</p>'
-        : '<p style="color:#ffb300;font-size:0.8rem;">⚡ AÇÃO OUSADA — Risco alto, consequências possíveis</p>';
-      narrativeHtml = warning + '<br>' + narrative;
-    }
-
-    UI.appendNarrative(narrativeHtml);
+    UI.appendNarrative(narrative);
     this.addJournal(`Turno ${this.state.turnNumber}: ${narrative.substring(0, 100)}...`);
 
     // Renderiza opções
@@ -337,11 +338,13 @@ FORMATO OBRIGATÓRIO (use exatamente):
     this.isProcessing = true;
     document.getElementById('narrative-choices').innerHTML = '';
 
-    this.history.push({ turn: this.state.turnNumber, date: this.state.gameDate, action });
+    const audacity = this.auditActionAudacity(action);
+    this.history.push({ turn: this.state.turnNumber, date: this.state.gameDate, action, audacity });
     if (this.history.length > 15) this.history.shift();
 
     const context = this.buildContext();
     context.action = action;
+    context.audacity = audacity;
 
     if (!AIEngine.enabled) {
       this.showError('IA não configurada. Vá em Configurações para adicionar a API key.');
@@ -353,17 +356,22 @@ FORMATO OBRIGATÓRIO (use exatamente):
 
 Contexto atual:
 - Local: ${context.location}
+- País: ${context.country || 'Nenhum'}
+- Líder: ${context.leader || context.playerName} (${context.title || context.profession})
 - Data: ${context.date} (Turno ${context.turn})
-- Personagem: ${context.leader || context.playerName} (${context.title || context.profession})
+- Personagem: ${context.playerName} (${context.profession})
 - Traços: ${context.traits || 'nenhum'}
 - Ações recentes: ${context.recentActions.join('; ') || 'Nenhuma'}
 - NPCs próximos: ${context.nearbyNPCs || 'Nenhum'}
+- Nível de restrição: ${context.difficulty || 'normal'}
+- Ousadia da ação: ${audacity}/10
 
-Gere aContinuação da narrativa (2-3 parágrafos) que:
+Gere a continuação da narrativa (2-3 parágrafos) que:
 1. Descreva o resultado da ação
-2. Mostre consequências no mundo
-3. Introdusca um novo desenvolvimento ou escolha
+2. Mostre consequências no mundo (recursos, influência, moral)
+3. Introduza um novo desenvolvimento ou escolha
 4. Seja em português do Brasil
+5. Seja realista baseado no nível de restrição (${context.difficulty})
 
 FORMATO OBRIGATÓRIO:
 [NARRATIVA]
@@ -438,8 +446,9 @@ ${loc?.desc || ''}
 
 Contexto:
 - Data: ${this.state.gameDate}
-- Personagem: ${this.state.playerName} (${this.state.country?.leader || this.state.profession})
+- Personagem: ${this.state.playerName} (${this.state.country?.leader?.name || this.state.profession})
 - Ações recentes: ${context.recentActions.slice(-2).join('; ') || 'Nenhuma'}
+- Nível de restrição: ${this.state.difficulty}
 
 Gere 2-3 parágrafos descrevendo o que acontece agora no local.
 Inclua um evento ou desenvolvimento relevante.
@@ -503,4 +512,3 @@ FORMATO:
     return true;
   }
 };
-// v2
