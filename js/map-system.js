@@ -15,10 +15,18 @@ const MapSystem = {
   fogCircles: [],
   revealedAreas: [],
   currentLocation: null,
+  activeLayers: {
+    allegiance: false,
+    danger: false,
+    entities: true,
+    landmarks: true,
+    events: true
+  },
+  zoneLayers: [],
 
   /** Inicializa o mini-mapa na sidebar */
   init() {
-    if (this.map) return; // já inicializado
+    if (this.map) return;
     const container = document.getElementById('map-container');
     if (!container) return;
 
@@ -278,6 +286,85 @@ const MapSystem = {
   interactNPC(npcId) {
     this.closePopups();
     Engine.talkToNPC(npcId);
+  },
+
+  /** Alterna camada do mapa */
+  toggleLayer(layer) {
+    this.activeLayers[layer] = !this.activeLayers[layer];
+
+    // Atualiza visual do botão
+    const btn = document.getElementById('layer-' + layer);
+    if (btn) {
+      btn.style.background = this.activeLayers[layer] ? 'rgba(0,255,255,0.15)' : '';
+      btn.style.borderColor = this.activeLayers[layer] ? 'var(--accent)' : '';
+    }
+
+    // Atualiza visualização no mapa
+    if (layer === 'allegiance') {
+      this.updateAllegianceLayer();
+    } else if (layer === 'danger') {
+      this.updateDangerLayer();
+    } else if (layer === 'entities') {
+      this.refreshAllMarkers();
+    }
+  },
+
+  /** Atualiza camada de facções */
+  updateAllegianceLayer() {
+    // Remove zona anterior
+    this.zoneLayers.forEach(z => this.map.removeLayer(z));
+    this.zoneLayers = [];
+
+    if (!this.activeLayers.allegiance) return;
+
+    // Zonas de facção (simuladas)
+    const factions = [
+      { name: 'Sentinela Corp', color: '#e53935', center: [-23.583, -46.680], radius: 2000 },
+      { name: 'Resistência', color: '#00e676', center: [-23.520, -46.610], radius: 1500 },
+      { name: 'Gareth (Hacker)', color: '#7c4dff', center: [-23.550, -46.633], radius: 1000 }
+    ];
+
+    factions.forEach(f => {
+      const zone = L.circle([f.center[0], f.center[1]], {
+        radius: f.radius,
+        color: f.color,
+        fillColor: f.color,
+        fillOpacity: 0.15,
+        weight: 1,
+        opacity: 0.5
+      }).addTo(this.map);
+      zone.bindPopup(`<div class="popup-title">${f.name}</div><div class="popup-desc">Zona de influência</div>`);
+      this.zoneLayers.push(zone);
+    });
+  },
+
+  /** Atualiza camada de perigo */
+  updateDangerLayer() {
+    this.zoneLayers.forEach(z => this.map.removeLayer(z));
+    this.zoneLayers = [];
+
+    if (!this.activeLayers.danger) return;
+
+    // Áreas de perigo
+    const dangerZones = [
+      { name: 'Torre Altino', center: [-23.583, -46.680], radius: 800, level: 'alto' },
+      { name: 'Morro do Pinheirinho', center: [-23.520, -46.610], radius: 1200, level: 'médio' },
+      { name: 'Lapa (noite)', center: [-23.528, -46.681], radius: 600, level: 'baixo' }
+    ];
+
+    dangerZones.forEach(d => {
+      const color = d.level === 'alto' ? '#e53935' : d.level === 'médio' ? '#ffb300' : '#7c4dff';
+      const zone = L.circle([d.center[0], d.center[1]], {
+        radius: d.radius,
+        color: color,
+        fillColor: color,
+        fillOpacity: 0.2,
+        weight: 1,
+        dashArray: '5,5'
+      }).addTo(this.map);
+      zone.bindPopup(`<div class="popup-title">⚠️ ${d.name}</div><div class="popup-desc">Nível de perigo: ${d.level}</div>`);
+      this.zoneLayers.push(zone);
+    });
   },
 
   /** Fecha popups */

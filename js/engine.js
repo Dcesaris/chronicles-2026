@@ -24,14 +24,24 @@ const Engine = {
       difficulty: 'normal',
       realism: 'immersive',
 
-      // Stats
-      stats: { hp: 100, maxHp: 100, energy: 100, maxEnergy: 100, rep: 50, maxRep: 100 },
+      // Stats estilo Davia
+      stats: {
+        hp: 100, maxHp: 100,
+        energy: 100, maxEnergy: 100,
+        rep: 50, maxRep: 100,
+        influence: 10,      // Poder de influência
+        morale: 50,         // Estado emocional
+        resources: 500,     // Recursos financeiros
+        network: 20,        // Rede de contatos
+        legitimacy: 30      // Legitimidade perante outros
+      },
       credits: 500,
 
       // Localização
       currentLocation: 'pinheiros',
       visitedLocations: ['pinheiros'],
       revealedLocations: ['pinheiros'],
+      discoveredLocations: [], // Locais já visitados
 
       // História
       currentNode: 'open_awakening',
@@ -40,7 +50,7 @@ const Engine = {
       choices: [],
       ending: null,
 
-      // Invetário
+      // Inventário
       inventory: [],
       maxSlots: 8,
 
@@ -65,7 +75,16 @@ const Engine = {
       completedMissions: [],
 
       // NPCs relationships
-      npcRelations: {}
+      npcRelations: {},
+
+      // Map layers
+      mapLayers: {
+        allegiance: false,
+        danger: false,
+        entities: true,
+        landmarks: true,
+        events: true
+      }
     };
   },
 
@@ -534,13 +553,121 @@ const Engine = {
     document.getElementById('combat-modal').classList.remove('active');
   },
 
-  /** Avança tempo */
-  advanceTime(amount) {
-    this.state.stats.energy = Math.max(0, this.state.stats.energy - amount * 3);
-    // Regen passivo
-    if (this.state.stats.energy < 20) {
-      this.state.stats.energy = Math.min(this.state.maxEnergy, this.state.stats.energy + 5);
+  /** Avança tempo de forma significativa (Jump Forward) */
+  jumpForward(duration) {
+    const days = duration.days || 1;
+    const hours = duration.hours || 0;
+
+    // Avança a data
+    const date = new Date(this.state.gameDate);
+    date.setDate(date.getDate() + days);
+    date.setHours(date.getHours() + hours);
+    this.state.gameDate = date.toISOString().split('T')[0];
+
+    // Custo de energia
+    this.state.stats.energy = Math.max(0, this.state.stats.energy - (days * 5 + hours));
+
+    // Regen passivo durante o salto
+    this.state.stats.hp = Math.min(this.state.stats.maxHp, this.state.stats.hp + (days * 2));
+
+    // Ações dos NPCs durante o tempo que passou
+    const npcEvents = [];
+    const aliveNPCs = NPCSystem.allAlive();
+    for (const npc of aliveNPCs) {
+      // Chance de NPC agir durante o salto
+      if (Math.random() < 0.4) {
+        npc.currentRouteIndex = (npc.currentRouteIndex + Math.floor(Math.random() * 2)) % npc.routes.length;
+        const target = npc.routes[npc.currentRouteIndex];
+        npc.currentLat = target.lat + (Math.random() - 0.5) * 0.003;
+        npc.currentLng = target.lng + (Math.random() - 0.5) * 0.003;
+      }
+
+      // Eventos autônomos
+      const event = NPCSystem.generateEvent(this.state.currentLocation, this.state);
+      if (event) {
+        npcEvents.push(event);
+      }
     }
+
+    // Eventos de mundo aleatórios
+    if (Math.random() < 0.3) {
+      const worldEvents = [
+        `Notícias: Protestos eclodem na região central de São Paulo`,
+        `Alerta: Sentinela Corp anuncia operações expandidas no bairro`,
+        `Relato: Vazamento de dados da prefeitura é descoberto`,
+        `Evento: Tempestade atinge a cidade, causando interrupções`,
+        `Boato: Prefeito Carvalho seria investigado por corrupção`
+      ];
+      const event = worldEvents[Math.floor(Math.random() * worldEvents.length)];
+      UI.addNews(event);
+      this.addJournal(event);
+    }
+
+    // Processar eventos de NPCs
+    if (npcEvents.length > 0) {
+      const summary = npcEvents.slice(0, 2).join('. ');
+      this.addJournal(`Durante ${days} dia${days > 1 ? 's' : ''}, ${summary}`);
+    }
+
+    // Atualiza mapa
+    if (MapSystem.map) {
+      const loc = LOCATIONS[this.state.currentLocation];
+      if (loc) {
+        MapSystem.updatePlayer(loc.lat, loc.lng, this.state.currentLocation);
+      }
+      MapSystem.refreshAllMarkers();
+    }
+
+    UI.notify(`Avanço de ${days} dia${days > 1 ? 's' : ''}...`, 'info');
+    UI.updateStats();
+    UI.updateNPCs();
+    Storage.save(this.state);
+
+    // Retorna ao nó atual com nova situação
+    return this.loadNode(this.state.currentNode);
+  },
+
+  /** Mostra opções de Jump Forward */
+  showJumpForward() {
+    const options = [
+      { label: '⏰ 1 hora', days: 0, hours: 1 },
+      { label: '🌅 Me-dia', days: 0, hours: 6 },
+      { label: '📅 1 dia', days: 1, hours: 0 },
+      { label: '📆 3 dias', days: 3, hours: 0 },
+      { label: '🗓️ 1 semana', days: 7, hours: 0 },
+      { label: '🌙 Até o próximo evento', days: 14, hours: 0 }
+    ];
+
+    const choices = options.map(opt => ({
+      text: opt.label,
+      next: null,
+      effect: () => this.jumpForward(opt)
+    }));
+
+    const container = document.getElementById('narrative-choices');
+    container.innerHTML = '<p style="color:var(--text-secondary);margin-bottom:0.5rem;font-size:0.85rem;">Avançar no tempo:</p>';
+    choices.forEach((choice, i) => {
+      const btn = document.createElement('button');
+      btn.className = `choice-card stagger-${Math.min(i + 1, 5)}`;
+      btn.textContent = choice.text;
+      btn.onclick = () => {
+        container.innerHTML = '';
+        choice.effect();
+      };
+      container.appendChild(btn);
+    });
+
+    // Botão voltar
+    const back = document.createElement('button');
+    back.className = 'choice-card';
+    back.style.opacity = '1';
+    back.style.animation = 'none';
+    back.textContent = '✕ Cancelar';
+    back.onclick = () => {
+      container.innerHTML = '';
+      this.renderChoices(this.filterChoices(this.currentScene?.choices));
+    };
+    container.appendChild(back);
   },
 
   /** Avança data */
