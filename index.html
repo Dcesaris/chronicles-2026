@@ -418,16 +418,24 @@
     <div style="padding: 0.5rem; border-top:1px solid var(--border-glass);">
       <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5rem;">Camadas</div>
       <div style="display:flex;flex-wrap:wrap;gap:0.375rem;">
-        <button class="btn-back" style="padding:0.375rem 0.625rem;font-size:0.7rem;min-height:36px;" id="layer-allegiance" onclick="MapSystem.toggleLayer('allegiance')">
+        <button class="btn-back" style="padding:0.375rem 0.625rem;font-size:0.7rem;min-height:36px;background:rgba(229,57,53,0.1);border-color:rgba(229,57,53,0.5);" id="layer-allegiance" onclick="MapSystem.toggleLayer('allegiance')">
           🏴 Facções
         </button>
         <button class="btn-back" style="padding:0.375rem 0.625rem;font-size:0.7rem;min-height:36px;" id="layer-danger" onclick="MapSystem.toggleLayer('danger')">
           ⚠️ Perigo
         </button>
-        <button class="btn-back" style="padding:0.375rem 0.625rem;font-size:0.7rem;min-height:36px;" id="layer-npcs" onclick="MapSystem.toggleLayer('entities')">
+        <button class="btn-back" style="padding:0.375rem 0.625rem;font-size:0.7rem;min-height:36px;background:rgba(0,230,118,0.1);border-color:rgba(0,230,118,0.5);" id="layer-npcs" onclick="MapSystem.toggleLayer('entities')">
           👤 NPCs
         </button>
       </div>
+    </div>
+
+    <!-- Publish Readiness -->
+    <div style="padding: 0.5rem; border-top:1px solid var(--border-glass);">
+      <div style="font-size:0.65rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:0.5rem;">Publicar Cenário</div>
+      <button class="btn-next" style="width:100%;min-height:44px;font-size:0.85rem;" onclick="StoryCreator.validateAndPublish()">
+        <i class="fa-solid fa-check-circle"></i> Verificar e Publicar
+      </button>
     </div>
   </div>
 

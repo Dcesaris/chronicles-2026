@@ -226,5 +226,38 @@ const StoryCreator = {
       reader.readAsText(file);
     };
     input.click();
+  },
+
+  /** Valida e publica cenário (Publish Readiness) */
+  validateAndPublish() {
+    const s = this.editingScenario;
+    const checks = [
+      { name: 'Nome do cenário', pass: !!(s.name && s.name.length > 2) },
+      { name: 'ID do cenário', pass: !!(s.id && s.id.length > 2) },
+      { name: 'Pelo menos 1 local', pass: s.locations && Object.keys(s.locations).length > 0 },
+      { name: 'Pelo menos 1 NPC', pass: s.npcs && s.npcs.length > 0 },
+      { name: 'Pelo menos 1 nó de história', pass: s.nodes && Object.keys(s.nodes).length > 0 },
+      { name: 'Nó inicial definido', pass: s.startNode && s.nodes[s.startNode] }
+    ];
+
+    const failed = checks.filter(c => !c.pass);
+
+    if (failed.length > 0) {
+      const msg = 'Faltando:\n' + failed.map(c => '❌ ' + c.name).join('\n') + '\n\nComplete antes de publicar.';
+      UI.notify(msg, 'danger');
+      return;
+    }
+
+    // Exporta e notifica
+    const data = JSON.stringify(s, null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${s.id}-publicado.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    UI.notify(`✅ Cenário "${s.name}" pronto! Arquivo exportado.`, 'success');
   }
 };
