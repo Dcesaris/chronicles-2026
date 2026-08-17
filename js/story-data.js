@@ -507,6 +507,19 @@ const SCENARIOS = [
     theme: 'desastre',
     startLocation: 'recife',
     locations: ['recife', 'jolao', 'caatinga', 'litoral', 'sertao']
+  },
+  {
+    id: 'global',
+    name: 'Mundo 2026 — Escolha seu Líder',
+    subtitle: 'Reshape a história de qualquer nação',
+    description: 'Janeiro de 2026. O mundo está em transformação. Você pode escolher qualquer país e qualquer líder para iniciar sua história. Desde Washington até Pequim, de Moscou a Nairóbi — o mundo é seu sandbox. Cada nação traz desafios únicos, alianças complexas, e o poder de mudar o curso da história.',
+    difficulty: 'Variável',
+    timeEstimate: '60-120 min',
+    coords: { lat: 0, lng: 0 },
+    theme: 'global',
+    startLocation: null,
+    locations: [],
+    isGlobal: true
   }
 ];
 

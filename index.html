@@ -173,6 +173,36 @@
 </div>
 
 <!-- ============================================
+     TELA: PICKER DE PAÍSES (GLOBAL)
+     ============================================ -->
+<div id="screen-country-picker" class="screen">
+  <div class="scenarios-header">
+    <h2><i class="fa-solid fa-earth-americas"></i> &nbsp;Escolha sua Nação</h2>
+    <button class="btn-back" onclick="App.showScreen('scenarios')">
+      <i class="fa-solid fa-arrow-left"></i> Voltar
+    </button>
+  </div>
+  <div style="flex:1;overflow-y:auto;padding:1rem;" id="country-picker-list">
+    <!-- Países gerados via JS -->
+  </div>
+</div>
+
+<!-- ============================================
+     TELA: SELEÇÃO DE PAÍS (GLOBAL)
+     ============================================ -->
+<div id="screen-country-picker" class="screen">
+  <div class="scenarios-header">
+    <h2><i class="fa-solid fa-earth-americas"></i> &nbsp;Escolha seu País</h2>
+    <button class="btn-back" onclick="App.showScreen('scenarios')">
+      <i class="fa-solid fa-arrow-left"></i> Voltar
+    </button>
+  </div>
+  <div id="country-picker-list" style="padding: 1rem; overflow-y: auto;">
+    <!-- Países gerados via JS -->
+  </div>
+</div>
+
+<!-- ============================================
      TELA: WIZARD DE CRIAÇÃO
      ============================================ -->
 <div id="screen-wizard" class="screen">
@@ -593,6 +623,7 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/story-data.js"></script>
+<script src="js/global-scenarios.js"></script>
 <script src="js/npc-system.js"></script>
 <script src="js/map-system.js"></script>
 <script src="js/ai-engine.js"></script>

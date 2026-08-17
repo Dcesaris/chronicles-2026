@@ -151,11 +151,37 @@ Formato de saída (use EXATAMENTE estas tags):
 
   /** Gera abertura local (fallback) */
   generateLocalOpening() {
+    const isGlobal = this.state.scenario === 'global';
+
+    if (isGlobal && this.state.countryName) {
+      const leader = this.state.leader || {};
+      const capital = this.state.countryName;
+      const timeStr = this.getTimeString();
+      const leaderInfo = leader.name ? 'sob o governo de ' + leader.name + ', ' + leader.title + '.' : '';
+      const countryDesc = this.state.description || '';
+      const opening = 'É 1 de janeiro de 2026. ' + timeStr + '. Você está na capital de ' + capital + '. ' + leaderInfo + '\n\n' + countryDesc + ' A cidade ao seu redor carrega o peso de um novo ano e as tensões de um mundo em transformação.\n\n' + this.getOpeningHook(isGlobal);
+
+      UI.appendNarrative(opening);
+      this.addJournal('1 de janeiro de 2026. Dia começa em ' + capital + ', ' + this.state.countryName + '.');
+
+      // Adiciona notícias iniciais do país
+      if (this.state.news && this.state.news.length > 0) {
+        this.state.news.slice(0, 3).forEach(n => UI.addNews(n));
+      }
+
+      UI.renderChoices([
+        { text: '🏛️ Ir ao palácio/governo para avaliar a situação política', next: null, action: 'governo' },
+        { text: '📰 Buscar informações nos meios de comunicação locais', next: null, action: 'informação' },
+        { text: '🚶 Caminhar pela cidade para sentir o clima social', next: null, action: 'explorar' }
+      ]);
+      return;
+    }
+
     const loc = LOCATIONS[this.state.currentLocation];
-    const opening = `São ${this.getTimeString()}. Você está em ${loc?.name || 'São Paulo'}. A cidade pulsa ao seu redor com sua energia caótica habitual.\n\n${this.getOpeningHook()}`;
-    
+    const opening = 'São ' + this.getTimeString() + '. Você está em ' + (loc?.name || 'São Paulo') + '. A cidade pulsa ao seu redor com sua energia caótica habitual.\n\n' + this.getOpeningHook();
+
     UI.appendNarrative(opening);
-    this.addJournal(`Dia começa em ${loc?.name || 'São Paulo'}.`);
+    this.addJournal('Dia começa em ' + (loc?.name || 'São Paulo') + '.');
     UI.renderChoices([
       { text: '🔍 Investigar os arredores', next: null, action: 'investigar' },
       { text: '📱 Verificar celular/mensagens', next: null, action: 'verificar' },
@@ -168,7 +194,17 @@ Formato de saída (use EXATAMENTE estas tags):
     return `${hour}h`;
   },
 
-  getOpeningHook() {
+  getOpeningHook(isGlobal = false) {
+    if (isGlobal) {
+      const hooks = [
+        'Uma notícia urgente aparece no celular: uma crise política acaba de eclodir na capital.',
+        'Um assessora do governo te aborda na rua — há algo que precisam te dizer.',
+        'Manifestações eclodem nos arredores. O clima está tenso.',
+        'Seu telefone toca — uma ligação de um número desconhecido.',
+        'Reportagens falham sobre movimentos militares incomuns na região.'
+      ];
+      return hooks[Math.floor(Math.random() * hooks.length)];
+    }
     const hooks = [
       'Um estranho te observa de longe. Parece estar esperando algo.',
       'Notícias no celular falham sobre um incidente na região.',
@@ -182,13 +218,17 @@ Formato de saída (use EXATAMENTE estas tags):
   /** Constrói contexto para IA */
   buildContext() {
     const loc = LOCATIONS[this.state.currentLocation];
-    const nearbyNPCs = NPCSystem.allAlive().filter(n => 
+    const nearbyNPCs = NPCSystem.allAlive().filter(n =>
       NPCSystem.canMeet(n.id, this.state.currentLocation)
     );
+    const isGlobal = this.state.scenario === 'global';
 
     return {
-      location: loc?.name || this.state.currentLocation,
-      locationDesc: loc?.desc || '',
+      location: isGlobal ? (this.state.countryName || this.state.currentLocation) : (loc?.name || this.state.currentLocation),
+      locationDesc: isGlobal ? (this.state.description || '') : (loc?.desc || ''),
+      country: isGlobal ? this.state.countryName : null,
+      leader: isGlobal ? (this.state.leader?.name || '') : null,
+      leaderTitle: isGlobal ? (this.state.leader?.title || '') : null,
       traits: this.state.traits.join(', '),
       profession: this.state.profession,
       tone: this.state.tone,

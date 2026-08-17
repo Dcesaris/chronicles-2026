@@ -62,20 +62,26 @@ const App = {
     const grid = document.getElementById('scenarios-grid');
     if (!grid) return;
 
-    grid.innerHTML = SCENARIOS.map(s => `
-      <div class="scenario-card" onclick="App.selectScenario('${s.id}')" data-scenario="${s.id}">
-        <div class="scenario-card-thumb" style="background:linear-gradient(135deg, var(--accent), var(--accent2));opacity:0.3;"></div>
+    grid.innerHTML = SCENARIOS.map(s => {
+      const isGlobal = s.isGlobal;
+      const coordText = isGlobal
+        ? '<span><i class="fa-solid fa-earth-americas"></i> Mundo Inteiro</span>'
+        : `<span><i class="fa-solid fa-map-pin"></i> ${s.coords.lat.toFixed(2)}, ${s.coords.lng.toFixed(2)}</span>`;
+      return `
+      <div class="scenario-card${isGlobal ? ' scenario-card-global' : ''}" onclick="App.selectScenario('${s.id}')" data-scenario="${s.id}">
+        <div class="scenario-card-thumb" style="background:linear-gradient(135deg, ${isGlobal ? 'var(--accent), #00d4ff' : 'var(--accent), var(--accent2)'});opacity:0.3;"></div>
         <div class="scenario-card-body">
           <h3>${s.name}</h3>
           <p>${s.description}</p>
           <div class="scenario-meta">
             <span><i class="fa-solid fa-signal"></i> ${s.difficulty}</span>
             <span><i class="fa-solid fa-clock"></i> ${s.timeEstimate}</span>
-            <span><i class="fa-solid fa-map-pin"></i> ${s.coords.lat.toFixed(2)}, ${s.coords.lng.toFixed(2)}</span>
+            ${coordText}
           </div>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
   },
 
   /** Seleciona cenário e inicia wizard */
@@ -87,8 +93,77 @@ const App = {
     document.documentElement.setAttribute('data-scenario', scenario.theme);
     document.documentElement.setAttribute('data-theme', scenario.theme);
 
+    // Global scenario → mostra tela de seleção de país
+    if (scenario.isGlobal) {
+      this.showScreen('country-picker');
+      this.renderCountryPicker();
+      return;
+    }
+
     // Inicia wizard
     Wizard.init(scenarioId);
+    this.showScreen('wizard');
+  },
+
+  /** Renderiza tela de seleção de país */
+  renderCountryPicker() {
+    const container = document.getElementById('country-picker-list');
+    if (!container) return;
+
+    let html = '';
+    for (const [continentKey, continentData] of Object.entries(GLOBAL_COUNTRIES)) {
+      html += `<div class="continent-section"><h3>${continentData.label}</h3><div class="country-grid">`;
+      for (const country of continentData.countries) {
+        html += `
+          <div class="country-card" onclick="App.selectCountry('${country.id}')" data-country="${country.id}">
+            <div class="country-flag">${this.getCountryFlag(country.id)}</div>
+            <div class="country-info">
+              <div class="country-name">${country.name}</div>
+              <div class="country-leader">${country.leader.emoji || '👤'} ${country.leader.name}</div>
+              <div class="country-title">${country.leader.title}</div>
+            </div>
+          </div>
+        `;
+      }
+      html += '</div></div>';
+    }
+    container.innerHTML = html;
+  },
+
+  getCountryFlag(id) {
+    const flags = {
+      'usa': '🇺🇸', 'canada': '🇨🇦', 'mexico': '🇲🇽',
+      'brazil': '🇧🇷', 'argentina': '🇦🇷', 'chile': '🇨🇱', 'colombia': '🇨🇴',
+      'venezuela': '🇻🇪', 'peru': '🇵🇪', 'ecuador': '🇪🇨', 'uruguay': '🇺🇾',
+      'uk': '🇬🇧', 'france': '🇫🇷', 'germany': '🇩🇪', 'italy': '🇮🇹',
+      'spain': '🇪🇸', 'russia': '🇷🇺', 'ukraine': '🇺🇦', 'turkey': '🇹🇷',
+      'poland': '🇵🇱', 'sweden': '🇸🇪',
+      'china': '🇨🇳', 'japan': '🇯🇵', 'india': '🇮🇳', 'south-korea': '🇰🇷',
+      'iran': '🇮🇷', 'israel': '🇮🇱', 'saudi-arabia': '🇸🇦', 'uae': '🇦🇪',
+      'pakistan': '🇵🇰', 'indonesia': '🇮🇩', 'thailand': '🇹🇭', 'vietnam': '🇻🇳',
+      'nigeria': '🇳🇬', 'south-africa': '🇿🇦', 'egypt': '🇪🇬', 'ethiopia': '🇪🇹',
+      'kenya': '🇰🇪', 'morocco': '🇲🇦', 'algeria': '🇩🇿', 'drc': '🇨🇩',
+      'senegal': '🇸🇳', 'tanzania': '🇹🇿',
+      'australia': '🇦🇺', 'new-zealand': '🇳🇿', 'papua-new-guinea': '🇵🇬'
+    };
+    return flags[id] || '🏳️';
+  },
+
+  /** Seleciona país e inicia wizard */
+  selectCountry(countryId) {
+    const country = getCountryById(countryId);
+    if (!country) return;
+
+    // Encontra o cenário global
+    const scenario = SCENARIOS.find(s => s.isGlobal);
+    if (!scenario) return;
+
+    // Aplica tema baseado no país
+    document.documentElement.setAttribute('data-scenario', country.theme);
+    document.documentElement.setAttribute('data-theme', country.theme);
+
+    // Inicia wizard com o país selecionado
+    Wizard.init(scenario.id, country);
     this.showScreen('wizard');
   },
 
@@ -335,13 +410,25 @@ const Wizard = {
   wizardMarker: null,
 
   /** Inicializa o wizard */
-  init(scenarioId) {
+  init(scenarioId, selectedCountry = null) {
     this.step = 1;
     this.scenario = SCENARIOS.find(s => s.id === scenarioId) || SCENARIOS[0];
     this.selectedTraits = [];
     this.selectedTone = 'neutro';
     this.selectedStartLocation = null;
     this._formState = null;
+    this._selectedCountry = selectedCountry;
+
+    // Se for global e tiver país selecionado, pula etapa de mapa
+    this.skipMapStep = this.scenario.isGlobal && selectedCountry;
+    this.selectedCountry = selectedCountry;
+
+    // Se for global com país, pula passo 3 (mapa)
+    if (this.scenario.isGlobal && selectedCountry) {
+      this.skipMapStep = true;
+    } else {
+      this.skipMapStep = false;
+    }
 
     // Reset visual
     document.querySelectorAll('.wizard-step-dot').forEach((dot, i) => {
@@ -366,6 +453,13 @@ const Wizard = {
     const mapInfo = document.getElementById('wizard-map-info');
     if (mapInfo) mapInfo.textContent = 'Clique no mapa para selecionar seu início';
 
+    // Ajusta steps para global
+    if (this.skipMapStep) {
+      document.querySelectorAll('.wizard-step-dot')[2]?.style.setProperty('display', 'none');
+    } else {
+      document.querySelectorAll('.wizard-step-dot')[2]?.style.setProperty('display', '');
+    }
+
     // Wizard map — destrói se existir
     if (this.wizardMap) {
       this.wizardMap.remove();
@@ -389,6 +483,11 @@ const Wizard = {
     }
 
     if (this.step === 2) {
+      // Global com país selecionado → pula para finalizar
+      if (this.skipMapStep) {
+        this.finish();
+        return;
+      }
       // Inicializa mapa do wizard SOMENTE quando o passo 3 for exibido
       setTimeout(() => this.initWizardMap(), 50);
     }
@@ -402,7 +501,7 @@ const Wizard = {
     this.step++;
     this.updateUI();
     // Re-inicializa mapa após transição se estiver no passo 3
-    if (this.step === 3 && !this.wizardMap) {
+    if (this.step === 3 && !this.skipMapStep && !this.wizardMap) {
       setTimeout(() => this.initWizardMap(), 100);
     }
   },
@@ -547,11 +646,26 @@ const Wizard = {
       scenario: this.scenario.id
     };
 
+    // Se for cenário global, injeta dados do país
+    if (this.scenario.isGlobal && this._selectedCountry) {
+      this._formState.currentLocation = this._selectedCountry.id;
+      this._formState.country = this._selectedCountry;
+      this._formState.playerTitle = this._selectedCountry.title;
+    }
+
     Engine.startGame(this._formState.scenario, this._formState);
     // Mapa já foi inicializado pelo Engine.startGame()
     UI.renderAll();
     App.showScreen('game');
     UI.notify(`Bem-vindo a ${this.scenario.name}, ${this._formState.playerName}!`, 'success');
+  }
+
+    Engine.startGame(this._formState.scenario, this._formState);
+    // Mapa já foi inicializado pelo Engine.startGame()
+    UI.renderAll();
+    App.showScreen('game');
+    const countryLabel = this.selectedCountry ? this.selectedCountry.name : this.scenario.name;
+    UI.notify(`Bem-vindo a ${countryLabel}, ${this._formState.playerName}!`, 'success');
   }
 };
 
