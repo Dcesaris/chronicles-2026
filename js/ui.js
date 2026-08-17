@@ -177,7 +177,7 @@ const UI = {
   },
 
   /** Atualiza painel do personagem */
-  },
+  updateCharacterPanel() {
     const s = Engine.state;
     document.getElementById('char-avatar-display').textContent = s.avatar;
     document.getElementById('char-name-display').textContent = s.playerName;

@@ -659,14 +659,6 @@ const Wizard = {
     App.showScreen('game');
     UI.notify(`Bem-vindo a ${this.scenario.name}, ${this._formState.playerName}!`, 'success');
   }
-
-    Engine.startGame(this._formState.scenario, this._formState);
-    // Mapa já foi inicializado pelo Engine.startGame()
-    UI.renderAll();
-    App.showScreen('game');
-    const countryLabel = this.selectedCountry ? this.selectedCountry.name : this.scenario.name;
-    UI.notify(`Bem-vindo a ${countryLabel}, ${this._formState.playerName}!`, 'success');
-  }
 };
 
 /** ============================================
