@@ -7,12 +7,12 @@
 
 const AIEngine = {
   apiKey: null,
-  baseUrl: 'https://api.openai.com/v1',
-  model: 'gpt-4o-mini',
+  baseUrl: 'http://localhost:20128/v1',
+  model: 'Zeus-copy',
   enabled: false,
 
   /** Inicializa com API key */
-  init(apiKey, baseUrl = 'https://api.openai.com/v1', model = 'gpt-4o-mini') {
+  init(apiKey, baseUrl = 'http://localhost:20128/v1', model = 'Zeus-copy') {
     this.apiKey = apiKey;
     this.baseUrl = baseUrl;
     this.model = model;

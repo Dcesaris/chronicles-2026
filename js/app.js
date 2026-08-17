@@ -15,8 +15,19 @@ const App = {
     this.renderTraitButtons();
     this.setupKeyboard();
 
+    // Auto-configura com Omniroute se não houver config salva
     const savedApiConfig = localStorage.getItem('chronicles2026_api');
-    if (savedApiConfig) {
+    if (!savedApiConfig) {
+      // Configuração padrão do Omniroute
+      const defaultConfig = {
+        key: 'sk-5f238e76072d7926-4ecc50-fe5b0496',
+        baseUrl: 'http://localhost:20128/v1',
+        model: 'Zeus-copy'
+      };
+      localStorage.setItem('chronicles2026_api', JSON.stringify(defaultConfig));
+      AIEngine.init(defaultConfig.key, defaultConfig.baseUrl, defaultConfig.model);
+      console.log('[App] Configuração Omniroute aplicada automaticamente');
+    } else {
       try {
         const config = JSON.parse(savedApiConfig);
         if (config.key && config.baseUrl && config.model) {
