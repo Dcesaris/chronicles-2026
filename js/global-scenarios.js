@@ -660,3 +660,36 @@ function getCountryById(id) {
   }
   return null;
 }
+
+// =============================================
+// INTEGRATION: Adiciona ao jogo principal
+// =============================================
+
+// Adiciona países como locais no mapa
+for (const [continent, data] of Object.entries(GLOBAL_COUNTRIES)) {
+  for (const country of data.countries) {
+    if (!LOCATIONS[country.id]) {
+      LOCATIONS[country.id] = {
+        lat: country.coords.lat,
+        lng: country.coords.lng,
+        name: country.capital,
+        desc: `${country.capital}, ${country.name}. Capital de ${country.leader.name}.`
+      };
+    }
+  }
+}
+
+// Adiciona cenário global
+SCENARIOS.push({
+  id: 'global',
+  name: 'Mundo 2026 — Sandbox Global',
+  subtitle: 'Escolha uma nação. Reshape a história.',
+  description: 'Janeiro de 2026. O mundo está em transformação. Você é um líder mundial. Suas decisões vão ecoar por décadas.',
+  difficulty: 'Hard',
+  timeEstimate: 'Indefinido',
+  coords: { lat: 20.0, lng: 0.0 },
+  theme: 'singapura',
+  startLocation: null,
+  isGlobal: true,
+  countries: GLOBAL_COUNTRIES
+});

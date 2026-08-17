@@ -294,6 +294,16 @@ FORMATO:
     UI.renderJournal();
   },
 
+  /** Submete input livre do jogador */
+  async submitFreeInput() {
+    const input = document.getElementById('free-input');
+    if (!input) return;
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    await this.submitAction(text);
+  },
+
   updateAll() {
     UI.renderAll();
     Storage.save(this.state);

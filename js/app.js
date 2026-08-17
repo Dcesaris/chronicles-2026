@@ -331,7 +331,7 @@ const App = {
       MapSystem.init();
       MapSystem.revealedAreas = saved.revealedLocations || [];
       UI.renderAll();
-      Engine.loadNode(saved.currentNode);
+      Engine.generateScene();
       document.getElementById('save-modal').style.display = 'none';
       this.showScreen('game');
       UI.notify('Jogo carregado!', 'success');
@@ -650,7 +650,7 @@ const Wizard = {
     if (this.scenario.isGlobal && this._selectedCountry) {
       this._formState.currentLocation = this._selectedCountry.id;
       this._formState.country = this._selectedCountry;
-      this._formState.playerTitle = this._selectedCountry.title;
+      this._formState.playerTitle = this._selectedCountry.leader.title;
     }
 
     Engine.startGame(this._formState.scenario, this._formState);

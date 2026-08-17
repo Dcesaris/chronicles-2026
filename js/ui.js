@@ -113,8 +113,6 @@ const UI = {
       btn.onclick = () => {
         if (choice.action) {
           Engine.submitAction(choice.action);
-        } else if (choice.next) {
-          Engine.choose(choice);
         }
       };
       container.appendChild(btn);

@@ -285,7 +285,7 @@ const STORY_NODES = {
     location: 'pinheiros',
     text: `A coletiva de imprensa é transmitida ao vivo para todo o Brasil. As provas do Hotel Unique, os pagamentos da Sentinela, as testemunhas eliminadas — tudo exposto. O prefeito Carvalho é detido horas depois. Viktor tenta fugir mas é encontrado naeroporto de Congonhas.\n\n<span class="speaker">"Você mudou São Paulo hoje, {{player}},"</span> diz Gareth. <span class="speaker">"Não da forma que eu esperava, mas mudou."</span>\n\nA Sentinela Corp é dissolvida. A cidade começa a respirar. E você? Você finalmente pode dormir sem olhar por cima do ombro.`,
     choices: [
-      { text: '🏆 Final Heroico — Justiça Pública', next: 'end_heroic', tags: ['herói'], effect: (s) => { s.ending = 'heroic'; s.journal_push('Final atingido: Justiça Pública. Sentinela dissolvida, prefeito preso.'); } }
+      { text: '🏆 Final Heroico — Justiça Pública', next: 'end_heroic', tags: ['herói'], effect: (s) => { s.ending = 'heroic'; s.journal.push('Final atingido: Justiça Pública. Sentinela dissolvida, prefeito preso.'); } }
     ],
     journal: ' Sentinela dissolvida. Prefeito preso. São Paulo começa a se recuperar.',
     news: ['Prefeito Carvalho é denunciado; Sentinela Corp é dissolvida após escândalo']
@@ -296,7 +296,7 @@ const STORY_NODES = {
     location: 'pinheiros',
     text: `Você escolheu o caminho das sombras. As provas chegam aos meios certos — não à imprensa, mas a quem controla os meios. O prefeito cai, mas não por justiça: por competição política.\n\nEm seu lugar, surge uma nova figura: <span class="speaker">uma tecnocracia silenciosa</span>, com a Sentinela agora "reformada" e sob novo comando. Você é nomeado "consultor de segurança" — uma forma elegante de dizer que agora trabalha para eles.\n\n<span class="speaker">" Bem-vindo ao outro lado, {{player}},"</span> sussurra o novo prefeito. <span class="speaker">"A cidade nunca muda. Apenas troca de dono."</span>\n\nVocê olha pela janela do gabinete e vê São Paulo brilhando — linda, doentia, eterna.`,
     choices: [
-      { text: '🌑 Final Sombrio — O Novo Orden', next: 'end_dark', tags: ['corrompido'], effect: (s) => { s.ending = 'dark'; s.journal_push('Final atingido: O Novo Orden. {{player}} agora trabalha para o sistema.'); } }
+      { text: '🌑 Final Sombrio — O Novo Orden', next: 'end_dark', tags: ['corrompido'], effect: (s) => { s.ending = 'dark'; s.journal.push('Final atingido: O Novo Orden. {{player}} agora trabalha para o sistema.'); } }
     ],
     journal: 'Nova tecnocracia toma o poder. Sentinela reformada. {{player}} é cooptado.',
     news: ['Nova administração anuncia reformas na segurança pública de São Paulo']
@@ -307,7 +307,7 @@ const STORY_NODES = {
     location: 'aeropuerto',
     text: `Você corre pelo aeroporto de Congonhas com o notebook apertado contra o peito. O voo para o México decola às 3h47 da manhã. Através da janela, São Paulo se transforma em um tapete de luzes que se afasta.\n\n<span class="speaker">"Eu sobrevivi,"</span> pensa. <span class="speaker">"Mas a cidade... a cidade ficou para trás."</span>\n\nNos terraços do avião, você abre o notebook. As provas estão lá. Mas quem vai acreditar em uma voz de alguém que fugiu? A cidade que você amava — que você jurou proteger — agora é apenas memória.\n\n<span class="speaker">Talvez um dia...</span> você pensa, fechando os olhos.`,
     choices: [
-      { text: '🛫 Final Fuga — Sobrevivência Sozinha', next: 'end_escape', tags: ['isolado'], effect: (s) => { s.ending = 'escape'; s.journal_push('Final atingido: Fuga. {{player}} deixou São Paulo com as provas, mas sozinho.'); } }
+      { text: '🛫 Final Fuga — Sobrevivência Sozinha', next: 'end_escape', tags: ['isolado'], effect: (s) => { s.ending = 'escape'; s.journal.push('Final atingido: Fuga. {{player}} deixou São Paulo com as provas, mas sozinho.'); } }
     ],
     journal: '{{player}} fugiu de São Paulo. As provas estão seguras, mas o legado é incerto.',
     news: ['Voo com destino a Cancún decola de Congonhas sem passageiros identificados']
