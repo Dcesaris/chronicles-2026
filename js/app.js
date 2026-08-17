@@ -14,6 +14,17 @@ const App = {
     this.renderTraitButtons();
     this.setupKeyboard();
 
+    // Verifica API key salva e configura IA automaticamente
+    const savedApiConfig = localStorage.getItem('chronicles2026_api');
+    if (savedApiConfig) {
+      try {
+        const config = JSON.parse(savedApiConfig);
+        if (config.key && config.baseUrl && config.model) {
+          AIEngine.init(config.key, config.baseUrl, config.model);
+        }
+      } catch(e) {}
+    }
+
     // Verifica save existente
     if (Storage.hasSave()) {
       const info = Storage.getLastSaveInfo();
@@ -121,22 +132,28 @@ const App = {
     `;
     modal.innerHTML = `
       <div style="width:100%;max-width:400px;background:var(--bg-panel);border:1px solid var(--border-glass);border-radius:16px;padding:1.5rem;">
-        <h3 style="font-family:var(--font-title);margin-bottom:1rem;">⚙️ Configurações</h3>
+        <h3 style="font-family:var(--font-title);margin-bottom:1rem;">⚙️ Configurações de IA</h3>
         <div class="form-group">
-          <label>API Key (OpenAI compatible)</label>
-          <input type="password" id="settings-api-key" placeholder="sk-..." style="width:100%;padding:0.75rem;background:var(--bg-glass);border:1px solid var(--border-glass);border-radius:8px;color:var(--text-primary);font-family:var(--font-terminal);font-size:0.85rem;">
+          <label>API Key</label>
+          <input type="password" id="settings-api-key" placeholder="Sua API key..." style="width:100%;padding:0.75rem;background:var(--bg-glass);border:1px solid var(--border-glass);border-radius:8px;color:var(--text-primary);font-family:var(--font-terminal);font-size:0.85rem;">
         </div>
         <div class="form-group">
           <label>Base URL</label>
-          <input type="text" id="settings-api-url" value="https://api.openai.com/v1" style="width:100%;padding:0.75rem;background:var(--bg-glass);border:1px solid var(--border-glass);border-radius:8px;color:var(--text-primary);font-size:0.85rem;">
+          <input type="text" id="settings-api-url" placeholder="https://api.omniroute.ai/v1" style="width:100%;padding:0.75rem;background:var(--bg-glass);border:1px solid var(--border-glass);border-radius:8px;color:var(--text-primary);font-size:0.85rem;">
         </div>
         <div class="form-group">
           <label>Modelo</label>
           <select id="settings-api-model" style="width:100%;padding:0.75rem;background:var(--bg-glass);border:1px solid var(--border-glass);border-radius:8px;color:var(--text-primary);font-size:0.85rem;">
-            <option value="gpt-4o-mini">GPT-4o Mini (recomendado)</option>
+            <option value="omniroute/Zeus-copy">Zeus-copy (recomendado)</option>
+            <option value="omniroute/Zeus-2.0">Zeus-2.0</option>
+            <option value="gpt-4o-mini">GPT-4o Mini</option>
             <option value="gpt-4o">GPT-4o</option>
-            <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+            <option value="custom">Outro (digite abaixo)</option>
           </select>
+        </div>
+        <div class="form-group" id="custom-model-group" style="display:none;">
+          <label>Modelo personalizado</label>
+          <input type="text" id="settings-api-model-custom" placeholder="nome-do-modelo" style="width:100%;padding:0.75rem;background:var(--bg-glass);border:1px solid var(--border-glass);border-radius:8px;color:var(--text-primary);font-family:var(--font-terminal);font-size:0.85rem;">
         </div>
         <div style="display:flex;gap:0.5rem;margin-top:1rem;">
           <button class="btn-back" style="flex:1;min-height:44px;" onclick="document.getElementById('settings-modal').remove()">Cancelar</button>
@@ -153,26 +170,45 @@ const App = {
       try {
         const config = JSON.parse(saved);
         document.getElementById('settings-api-key').value = config.key || '';
-        document.getElementById('settings-api-url').value = config.baseUrl || 'https://api.openai.com/v1';
-        document.getElementById('settings-api-model').value = config.model || 'gpt-4o-mini';
+        document.getElementById('settings-api-url').value = config.baseUrl || 'https://api.omniroute.ai/v1';
+        document.getElementById('settings-api-model').value = config.model || 'omniroute/Zeus-copy';
+        if (config.model === 'custom') {
+          document.getElementById('custom-model-group').style.display = 'block';
+          document.getElementById('settings-api-model-custom').value = config.customModel || '';
+        }
       } catch(e) {}
     }
+
+    // Toggle custom model input
+    document.getElementById('settings-api-model').addEventListener('change', (e) => {
+      document.getElementById('custom-model-group').style.display = e.target.value === 'custom' ? 'block' : 'none';
+    });
   },
 
   /** Salva configurações de API */
   saveSettings() {
     const key = document.getElementById('settings-api-key').value.trim();
-    const baseUrl = document.getElementById('settings-api-url').value.trim() || 'https://api.openai.com/v1';
-    const model = document.getElementById('settings-api-model').value || 'gpt-4o-mini';
+    const baseUrl = document.getElementById('settings-api-url').value.trim() || 'https://api.omniroute.ai/v1';
+    const modelSelect = document.getElementById('settings-api-model').value;
+    const model = modelSelect === 'custom'
+      ? document.getElementById('settings-api-model-custom').value.trim()
+      : modelSelect;
 
-    if (key) {
+    if (key && model) {
       AIEngine.init(key, baseUrl, model);
-      localStorage.setItem('chronicles2026_api', JSON.stringify({ key, baseUrl, model }));
-      UI.notify('IA configurada com sucesso!', 'success');
-    } else {
+      localStorage.setItem('chronicles2026_api', JSON.stringify({
+        key,
+        baseUrl,
+        model,
+        customModel: modelSelect === 'custom' ? model : null
+      }));
+      UI.notify(`IA configurada com ${model}!`, 'success');
+    } else if (!key) {
       AIEngine.enabled = false;
       localStorage.removeItem('chronicles2026_api');
-      UI.notify('Modo IA desativado. Usando engine local.', 'info');
+      UI.notify('IA desativada.', 'info');
+    } else {
+      UI.notify('Preencha o modelo.', 'warning');
     }
 
     document.getElementById('settings-modal').remove();
