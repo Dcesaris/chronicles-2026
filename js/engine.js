@@ -11,6 +11,146 @@ const Engine = {
   history: [],
   isProcessing: false,
 
+  /** Sistema de Travas/Restrições (3 níveis) */
+  constraints: {
+    /**
+     * Nível 1 - Arcade: Mundo maleável, consequências leves
+     * - Ações ousadas têm 70% de chance de sucesso
+     * - Recursos são abundantes
+     * - NPCS são cooperativos
+     */
+    arcade: {
+      successChance: 0.7,
+      resourceMultiplier: 1.5,
+      npcCooperation: 0.8,
+      consequenceSeverity: 0.3,
+      description: 'Arcade — Mundo maleável, consequências leves'
+    },
+    /**
+     * Nível 2 - Normal: Equilibrado, realismo moderado
+     * - Ações ousadas têm 50% de chance de sucesso
+     * - Recursos são limitados mas suficientes
+     * - NPCS reagem de forma realista
+     */
+    normal: {
+      successChance: 0.5,
+      resourceMultiplier: 1.0,
+      npcCooperation: 0.5,
+      consequenceSeverity: 0.6,
+      description: 'Normal — Equilibrado, realismo moderado'
+    },
+    /**
+     * Nível 3 - Hardcore: Realismo máximo, consequências severas
+     * - Ações ousadas têm 25% de chance de sucesso
+     * - Recursos escassos, gestão crítica
+     * - NPCS traiçoeiros, alianças frágeis
+     */
+    hardcore: {
+      successChance: 0.25,
+      resourceMultiplier: 0.6,
+      npcCooperation: 0.2,
+      consequenceSeverity: 1.0,
+      description: 'Hardcore — Realismo máximo, consequências severas'
+    }
+  },
+
+  /** Calcula chance de sucesso baseada nas travas */
+  calculateSuccessChance(action, context) {
+    const constraint = this.constraints[this.state.difficulty] || this.constraints.normal;
+    
+    // Fatores que afetam chance
+    let baseChance = constraint.successChance;
+    
+    // Bônus por influência
+    const influenceBonus = (this.state.stats.influence / 100) * 0.2;
+    baseChance += influenceBonus;
+    
+    // Bônus por recursos
+    const resourceBonus = (this.state.stats.resources / 1000) * 0.15;
+    baseChance += resourceBonus;
+    
+    // Bônus por traços relevantes
+    const relevantTraits = ['corajoso', 'estrategista', 'astuto'];
+    const traitBonus = this.state.traits.filter(t => relevantTraits.includes(t)).length * 0.05;
+    baseChance += traitBonus;
+    
+    // Penalidades por ações muito ousadas
+    const audacity = this.auditActionAudacity(action);
+    const audacityPenalty = audacity * 0.15;
+    baseChance -= audacityPenalty;
+    
+    // Penalidade por relações ruins com Alvos
+    const badRelations = Object.values(this.state.npcRelations).filter(r => r < -20).length;
+    baseChance -= badRelations * 0.1;
+    
+    // Clamp entre 0.05 e 0.95
+    return Math.max(0.05, Math.min(0.95, baseChance));
+  },
+
+  /** Avalia o quão ousada é uma ação (0-10) */
+  auditActionAudacity(action) {
+    const lower = action.toLowerCase();
+    let audacity = 0;
+    
+    // Ações militares
+    if (lower.includes('declarar guerra') || lower.includes('atacar') || lower.includes('invasion')) {
+      audacity += 8;
+    }
+    if (lower.includes('matar') || lower.includes('assassinar') || lower.includes('executar')) {
+      audacity += 9;
+    }
+    if (lower.includes('golpe') || lower.includes('coup') || lower.includes('derrocar')) {
+      audacity += 7;
+    }
+    
+    // Ações diplomáticas
+    if (lower.includes('aliança') || lower.includes('tratado') || lower.includes('pacto')) {
+      audacity += 3;
+    }
+    if (lower.includes('sanção') || lower.includes('embargo') || lower.includes('bloqueio')) {
+      audacity += 5;
+    }
+    
+    // Ações econômicas
+    if (lower.includes('confiscar') || lower.includes('nacionalizar') || lower.includes('expropriar')) {
+      audacity += 6;
+    }
+    if (lower.includes('crise') || lower.includes('colapso') || lower.includes('depressão')) {
+      audacity += 4;
+    }
+    
+    // Ações de informação
+    if (lower.includes('mentir') || lower.includes('enganar') || lower.includes('fraude')) {
+      audacity += 4;
+    }
+    if (lower.includes('vazar') || lower.includes('denunciar') || lower.includes('expor')) {
+      audacity += 3;
+    }
+    
+    return Math.min(10, audacity);
+  },
+
+  /** Aplica consequências baseadas nas travas */
+  applyConsequences(result, audacity) {
+    const constraint = this.constraints[this.state.difficulty] || this.constraints.normal;
+    const severity = constraint.consequenceSeverity;
+    
+    if (result.success) {
+      // Sucesso com consequências menores no arcade
+      const resourceGain = Math.floor(result.resourceEffect * constraint.resourceMultiplier);
+      this.state.stats.resources = Math.max(0, this.state.stats.resources + resourceGain);
+      this.state.stats.influence = Math.min(100, this.state.stats.influence + result.influenceEffect);
+      this.state.stats.morale = Math.min(100, this.state.stats.morale + result.moraleEffect);
+    } else {
+      // Fracasso com consequências severas no hardcore
+      const penalty = severity * 2;
+      this.state.stats.resources = Math.max(0, this.state.stats.resources - Math.floor(audacity * penalty));
+      this.state.stats.influence = Math.max(0, this.state.stats.influence - Math.floor(audacity * penalty * 0.5));
+      this.state.stats.morale = Math.max(0, this.state.stats.morale - Math.floor(audacity * penalty * 0.3));
+      this.state.stats.legitimacy = Math.max(0, this.state.stats.legitimacy - Math.floor(audacity * penalty * 0.4));
+    }
+  },
+
   /** Estado inicial */
   defaultState() {
     return {
@@ -137,15 +277,51 @@ FORMATO OBRIGATÓRIO (use exatamente):
     };
   },
 
-  processIAResponse(response) {
+  processIAResponse(response, audacity, successChance) {
+    // Tenta extrair seções
     const narrativeMatch = response.match(/\[NARRATIVA\]([\s\S]*?)\[\/NARRATIVA\]/);
-    const optionsMatch = response.match(/\[OPÇÕES\]([\s\S]*?)\[\/OPÇÕES\]/);
+    const consequencesMatch = response.match(/\[CONSEQUENCIAS\]([\s\S]*?)\[\/CONSEQUENCIAS\]/);
+    const optionsMatch = response.match(/\[OPCOES\]([\s\S]*?)\[\/OPCOES\]/);
+
     const narrative = narrativeMatch ? narrativeMatch[1].trim() : response;
+    const consequencesText = consequencesMatch ? consequencesMatch[1].trim() : '';
     const optionsText = optionsMatch ? optionsMatch[1].trim() : '';
 
-    UI.appendNarrative(narrative);
-    this.addJournal(narrative.substring(0, 150) + (narrative.length > 150 ? '...' : ''));
+    // Parse consequências
+    let resourceChange = 0;
+    let influenceChange = 0;
+    let moraleChange = 0;
+    
+    const resMatch = consequencesText.match(/Recursos:\s*([+-]?\d+)/i);
+    if (resMatch) resourceChange = parseInt(resMatch[1]);
+    
+    const infMatch = consequencesText.match(/Influencia:\s*([+-]?\d+)/i);
+    if (infMatch) influenceChange = parseInt(infMatch[1]);
+    
+    const morMatch = consequencesText.match(/Moral:\s*([+-]?\d+)/i);
+    if (morMatch) moraleChange = parseInt(morMatch[1]);
 
+    // Aplica consequências se houver mudança
+    if (resourceChange !== 0 || influenceChange !== 0 || moraleChange !== 0) {
+      this.state.stats.resources = Math.max(0, Math.min(10000, this.state.stats.resources + resourceChange));
+      this.state.stats.influence = Math.max(0, Math.min(100, this.state.stats.influence + influenceChange));
+      this.state.stats.morale = Math.max(0, Math.min(100, this.state.stats.morale + moraleChange));
+      UI.updateStats();
+    }
+
+    // Adiciona aviso de travas se ação foi muito ousada
+    let narrativeHtml = narrative;
+    if (audacity >= 7) {
+      const warning = audacity >= 9 
+        ? '<p style="color:#e53935;font-size:0.8rem;">⚠️ AÇÃO EXTREMAMENTE OUSADA — Consequências severas aplicadas</p>'
+        : '<p style="color:#ffb300;font-size:0.8rem;">⚡ AÇÃO OUSADA — Risco alto, consequências possíveis</p>';
+      narrativeHtml = warning + '<br>' + narrative;
+    }
+
+    UI.appendNarrative(narrativeHtml);
+    this.addJournal(`Turno ${this.state.turnNumber}: ${narrative.substring(0, 100)}...`);
+
+    // Renderiza opções
     const choices = optionsText.split('\n')
       .filter(l => l.trim())
       .map(l => ({ text: l.replace(/^\d+\.\s*/, ''), action: l.toLowerCase() }));
