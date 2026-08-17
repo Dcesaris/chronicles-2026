@@ -30,6 +30,18 @@ const UI = {
     }, node.text.length * 15 + 500);
   },
 
+  /** Append narrative text (para IA) */
+  appendNarrative(html) {
+    const box = document.getElementById('narrative-box');
+    const el = document.createElement('div');
+    el.className = 'narrative-text fade-up';
+    el.style.marginTop = '1rem';
+    el.style.opacity = '0.9';
+    el.innerHTML = html;
+    box.appendChild(el);
+    box.scrollTop = box.scrollHeight;
+  },
+
   /** Typewriter effect */
   typeText(container, html) {
     if (this.typewriterTimeout) clearTimeout(this.typewriterTimeout);
@@ -98,7 +110,13 @@ const UI = {
       const btn = document.createElement('button');
       btn.className = `choice-card stagger-${Math.min(i + 1, 5)}`;
       btn.innerHTML = choice.text;
-      btn.onclick = () => Engine.choose(choice);
+      btn.onclick = () => {
+        if (choice.action) {
+          Engine.submitAction(choice.action);
+        } else if (choice.next) {
+          Engine.choose(choice);
+        }
+      };
       container.appendChild(btn);
     });
   },
@@ -145,7 +163,7 @@ const UI = {
     box.insertBefore(portrait, box.firstChild);
   },
 
-  /** Atualiza painel do personagem */
+  /** Atualiza personagem e cena */
   renderAll() {
     this.updateCharacterPanel();
     this.updateStats();
@@ -159,7 +177,7 @@ const UI = {
   },
 
   /** Atualiza painel do personagem */
-  updateCharacterPanel() {
+  },
     const s = Engine.state;
     document.getElementById('char-avatar-display').textContent = s.avatar;
     document.getElementById('char-name-display').textContent = s.playerName;
